@@ -1,4 +1,4 @@
-import { Shield, Lock, TrendingUp, Users } from "lucide-react";
+import { Shield, Lock, TrendingUp, Users, Coins } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
@@ -14,23 +14,23 @@ export default function FeatureHighlight() {
     {
       icon: Lock,
       title: "Anti-Bundling",
-      description: "Prevent whale manipulation with wallet limits and KYC.",
+      description: "2.5% max per wallet for 15 min prevents whale manipulation.",
       badge: "Secure",
       color: "from-primary to-chart-2",
+    },
+    {
+      icon: Coins,
+      title: "Creator Rewards",
+      description: "Earn rewards on every trade of your token. Passive income guaranteed.",
+      badge: "Earn",
+      color: "from-chart-5 to-chart-3",
     },
     {
       icon: TrendingUp,
       title: "Social Media Trending",
       description: "Launch tokens based on viral memes from social platforms.",
       badge: "AI Powered",
-      color: "from-chart-2 to-chart-3",
-    },
-    {
-      icon: Users,
-      title: "Fair Distribution",
-      description: "2.5% max per wallet for 15 min, locked liquidity, creator rewards.",
-      badge: "Fair Launch",
-      color: "from-chart-5 to-chart-4",
+      color: "from-chart-2 to-primary",
     },
   ];
 

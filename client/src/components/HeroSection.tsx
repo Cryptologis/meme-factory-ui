@@ -1,4 +1,4 @@
-import { Wallet, Sparkles, Shield, TrendingUp } from "lucide-react";
+import { Wallet, Sparkles, Shield, TrendingUp, Coins } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
@@ -64,6 +64,9 @@ export default function HeroSection({
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mt-16 max-w-4xl mx-auto">
             <div className="p-6 rounded-lg bg-card/50 backdrop-blur-sm border">
+              <div className="flex items-center gap-2 mb-2">
+                <Shield className="w-6 h-6 text-primary" />
+              </div>
               <div className="text-3xl font-bold bg-gradient-to-r from-primary to-chart-2 bg-clip-text text-transparent mb-2">
                 No Bots
               </div>
@@ -73,20 +76,26 @@ export default function HeroSection({
             </div>
 
             <div className="p-6 rounded-lg bg-card/50 backdrop-blur-sm border">
-              <div className="text-3xl font-bold bg-gradient-to-r from-chart-3 to-primary bg-clip-text text-transparent mb-2">
-                2.5% Max
+              <div className="flex items-center gap-2 mb-2">
+                <Coins className="w-6 h-6 text-chart-3" />
+              </div>
+              <div className="text-3xl font-bold bg-gradient-to-r from-chart-3 to-chart-5 bg-clip-text text-transparent mb-2">
+                Earn Rewards
               </div>
               <p className="text-sm text-muted-foreground">
-                First 15 min limit prevents whale manipulation
+                Creator rewards on every trade
               </p>
             </div>
 
             <div className="p-6 rounded-lg bg-card/50 backdrop-blur-sm border">
-              <div className="text-3xl font-bold bg-gradient-to-r from-chart-2 to-chart-3 bg-clip-text text-transparent mb-2">
-                100% Fair
+              <div className="flex items-center gap-2 mb-2">
+                <TrendingUp className="w-6 h-6 text-chart-2" />
+              </div>
+              <div className="text-3xl font-bold bg-gradient-to-r from-chart-2 to-primary bg-clip-text text-transparent mb-2">
+                2.5% Max
               </div>
               <p className="text-sm text-muted-foreground">
-                Locked liquidity and vesting schedules
+                First 15 min limit prevents whale manipulation
               </p>
             </div>
           </div>
