@@ -7,6 +7,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { useWallet } from "@solana/wallet-adapter-react";
 
 interface WalletConnectionModalProps {
   open: boolean;
@@ -19,7 +20,18 @@ export default function WalletConnectionModal({
   onClose,
   onSelectWallet,
 }: WalletConnectionModalProps) {
-  const wallets = [
+  const { wallets, select } = useWallet();
+
+  const handleWalletSelect = (walletName: string) => {
+    const wallet = wallets.find((w) => w.adapter.name === walletName);
+    if (wallet) {
+      select(wallet.adapter.name);
+      onSelectWallet(walletName);
+      onClose();
+    }
+  };
+
+  const displayWallets = [
     {
       name: "Phantom",
       icon: "👻",
@@ -46,15 +58,12 @@ export default function WalletConnectionModal({
         </DialogHeader>
 
         <div className="space-y-3 mt-4">
-          {wallets.map((wallet) => (
+          {displayWallets.map((wallet) => (
             <Button
               key={wallet.name}
               variant="outline"
               className="w-full justify-start gap-3 h-auto p-4 hover-elevate"
-              onClick={() => {
-                onSelectWallet(wallet.name);
-                onClose();
-              }}
+              onClick={() => handleWalletSelect(wallet.name)}
               data-testid={`button-wallet-${wallet.name.toLowerCase()}`}
             >
               <span className="text-2xl">{wallet.icon}</span>

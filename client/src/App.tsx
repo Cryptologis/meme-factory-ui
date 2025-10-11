@@ -11,6 +11,8 @@ import HomePage from "@/pages/HomePage";
 import CreateTokenPage from "@/pages/CreateTokenPage";
 import TradePage from "@/pages/TradePage";
 import NotFound from "@/pages/not-found";
+import { useWallet } from "@/hooks/useWallet";
+import { useWalletModal } from "@solana/wallet-adapter-react-ui";
 
 function Router() {
   return (
@@ -24,20 +26,22 @@ function Router() {
 }
 
 function App() {
-  const [walletConnected, setWalletConnected] = useState(false);
   const [walletModalOpen, setWalletModalOpen] = useState(false);
   const [location, setLocation] = useLocation();
-
-  const mockWalletAddress = "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU";
-  const mockBalance = 12.45;
+  const { publicKey, connected, disconnect, balance } = useWallet();
+  const { setVisible } = useWalletModal();
 
   const handleConnectWallet = () => {
-    setWalletModalOpen(true);
+    setVisible(true);
+  };
+
+  const handleDisconnect = () => {
+    disconnect();
   };
 
   const handleSelectWallet = (wallet: string) => {
-    console.log("Connected to", wallet);
-    setWalletConnected(true);
+    console.log("Selected wallet:", wallet);
+    setWalletModalOpen(false);
   };
 
   return (
@@ -92,19 +96,20 @@ function App() {
 
             <div className="flex items-center gap-3">
               <ThemeToggle />
-              {walletConnected ? (
+              {connected && publicKey ? (
                 <div className="flex items-center gap-3">
                   <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-md bg-card border">
                     <span className="text-sm font-mono text-muted-foreground">
-                      {mockBalance.toFixed(2)} SOL
+                      {balance !== null ? balance.toFixed(2) : "0.00"} SOL
                     </span>
                   </div>
                   <button
+                    onClick={handleDisconnect}
                     className="flex items-center gap-2 px-3 py-2 rounded-md border hover-elevate"
                     data-testid="button-wallet-connected"
                   >
                     <span className="font-mono text-xs">
-                      {mockWalletAddress.slice(0, 4)}...{mockWalletAddress.slice(-4)}
+                      {publicKey.toString().slice(0, 4)}...{publicKey.toString().slice(-4)}
                     </span>
                     <span className="px-2 py-0.5 text-xs rounded-md bg-secondary">
                       Devnet
