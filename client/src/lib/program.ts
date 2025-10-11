@@ -1,13 +1,10 @@
 import { PublicKey } from "@solana/web3.js";
+import MemeChainIDL from "./meme_chain.json";
 
-// TODO: Replace with actual program ID after deployment
+// Actual deployed Program ID on devnet
 export const PROGRAM_ID = new PublicKey(
-  "11111111111111111111111111111111"
+  "5mE8RwFEnMJ1Rs4bLM2VSrzMN8RSEJkf1vXb9VpAybvi"
 );
 
-// Placeholder IDL - will be replaced with actual program IDL
-export const PROGRAM_IDL = {
-  version: "0.1.0",
-  name: "meme_factory",
-  instructions: [],
-};
+// Import the actual IDL from meme_chain.json
+export const PROGRAM_IDL = MemeChainIDL;
