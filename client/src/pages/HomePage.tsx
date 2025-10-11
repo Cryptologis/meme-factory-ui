@@ -3,10 +3,10 @@ import HeroSection from "@/components/HeroSection";
 import FeatureHighlight from "@/components/FeatureHighlight";
 import TrendingMemes from "@/components/TrendingMemes";
 import TokenCard from "@/components/TokenCard";
-import WalletConnectionModal from "@/components/WalletConnectionModal";
+import { useWalletModal } from "@solana/wallet-adapter-react-ui";
 
 export default function HomePage() {
-  const [walletModalOpen, setWalletModalOpen] = useState(false);
+  const { setVisible } = useWalletModal();
 
   const mockMemes = [
     {
@@ -95,7 +95,7 @@ export default function HomePage() {
   return (
     <div className="min-h-screen">
       <HeroSection
-        onConnectWallet={() => setWalletModalOpen(true)}
+        onConnectWallet={() => setVisible(true)}
         onCreateToken={() => window.location.hash = "#/create"}
       />
 
@@ -125,12 +125,6 @@ export default function HomePage() {
           ))}
         </div>
       </div>
-
-      <WalletConnectionModal
-        open={walletModalOpen}
-        onClose={() => setWalletModalOpen(false)}
-        onSelectWallet={(wallet) => console.log("Connected to", wallet)}
-      />
     </div>
   );
 }
