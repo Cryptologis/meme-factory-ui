@@ -1,6 +1,6 @@
-import { Wallet, Sparkles, TrendingUp } from "lucide-react";
+import { Wallet, Sparkles, Shield, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 
 interface HeroSectionProps {
   onConnectWallet?: () => void;
@@ -18,14 +18,25 @@ export default function HeroSection({
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 sm:py-32">
         <div className="text-center space-y-8">
           <div className="space-y-4">
+            <div className="flex items-center justify-center gap-2 mb-4">
+              <Badge className="bg-gradient-to-r from-chart-3 to-primary">
+                <Shield className="w-3 h-3 mr-1" />
+                Anti-PVP Protected
+              </Badge>
+              <Badge className="bg-gradient-to-r from-primary to-chart-2">
+                <TrendingUp className="w-3 h-3 mr-1" />
+                Reddit Trending
+              </Badge>
+            </div>
+            
             <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold">
-              Create & Trade{" "}
+              Fair Launch Your{" "}
               <span className="bg-gradient-to-r from-primary to-chart-2 bg-clip-text text-transparent">
-                Meme Tokens
+                Meme Token
               </span>
             </h1>
-            <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto">
-              Launch your own Solana tokens in seconds. Trade, buy, and sell on the ultimate meme token marketplace.
+            <p className="text-lg sm:text-xl text-muted-foreground max-w-3xl mx-auto">
+              The only launchpad with anti-PVP and anti-bundling protection. Launch tokens based on Reddit trending memes with fair distribution guaranteed.
             </p>
           </div>
 
@@ -47,40 +58,37 @@ export default function HeroSection({
               className="gap-2 backdrop-blur-sm bg-background/50"
             >
               <Sparkles className="w-5 h-5" />
-              Create Token
+              Launch Fair Token
             </Button>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 mt-16 max-w-4xl mx-auto">
-            <Card className="p-6 hover-elevate">
-              <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-primary to-chart-2 flex items-center justify-center mb-4">
-                <Sparkles className="w-6 h-6 text-white" />
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mt-16 max-w-4xl mx-auto">
+            <div className="p-6 rounded-lg bg-card/50 backdrop-blur-sm border">
+              <div className="text-3xl font-bold bg-gradient-to-r from-primary to-chart-2 bg-clip-text text-transparent mb-2">
+                No Bots
               </div>
-              <h3 className="font-semibold mb-2">Create Tokens</h3>
               <p className="text-sm text-muted-foreground">
-                Launch your own SPL tokens on Solana in just a few clicks
+                Anti-sniper protection prevents front-running
               </p>
-            </Card>
+            </div>
 
-            <Card className="p-6 hover-elevate">
-              <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-chart-3 to-chart-2 flex items-center justify-center mb-4">
-                <TrendingUp className="w-6 h-6 text-white" />
+            <div className="p-6 rounded-lg bg-card/50 backdrop-blur-sm border">
+              <div className="text-3xl font-bold bg-gradient-to-r from-chart-3 to-primary bg-clip-text text-transparent mb-2">
+                5% Max
               </div>
-              <h3 className="font-semibold mb-2">Trade Instantly</h3>
               <p className="text-sm text-muted-foreground">
-                Buy and sell tokens with instant settlement on Solana devnet
+                Per wallet limit prevents whale manipulation
               </p>
-            </Card>
+            </div>
 
-            <Card className="p-6 hover-elevate">
-              <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-chart-2 to-primary flex items-center justify-center mb-4">
-                <Wallet className="w-6 h-6 text-white" />
+            <div className="p-6 rounded-lg bg-card/50 backdrop-blur-sm border">
+              <div className="text-3xl font-bold bg-gradient-to-r from-chart-2 to-chart-3 bg-clip-text text-transparent mb-2">
+                100% Fair
               </div>
-              <h3 className="font-semibold mb-2">Manage Portfolio</h3>
               <p className="text-sm text-muted-foreground">
-                Track your holdings and transaction history in one place
+                Locked liquidity and vesting schedules
               </p>
-            </Card>
+            </div>
           </div>
         </div>
       </div>

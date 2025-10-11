@@ -1,10 +1,69 @@
 import { useState } from "react";
 import HeroSection from "@/components/HeroSection";
+import FeatureHighlight from "@/components/FeatureHighlight";
+import TrendingMemes from "@/components/TrendingMemes";
 import TokenCard from "@/components/TokenCard";
 import WalletConnectionModal from "@/components/WalletConnectionModal";
 
 export default function HomePage() {
   const [walletModalOpen, setWalletModalOpen] = useState(false);
+
+  const mockMemes = [
+    {
+      id: "1",
+      title: "Dogwifhat takes over the internet again",
+      subreddit: "CryptoCurrency",
+      upvotes: 12500,
+      comments: 342,
+      trend_score: 95,
+      url: "https://reddit.com/r/cryptocurrency",
+    },
+    {
+      id: "2",
+      title: "When you finally understand blockchain",
+      subreddit: "memes",
+      upvotes: 8900,
+      comments: 156,
+      trend_score: 87,
+      url: "https://reddit.com/r/memes",
+    },
+    {
+      id: "3",
+      title: "Pepe vs Wojak: The eternal battle",
+      subreddit: "dankmemes",
+      upvotes: 15200,
+      comments: 428,
+      trend_score: 92,
+      url: "https://reddit.com/r/dankmemes",
+    },
+    {
+      id: "4",
+      title: "Solana developers right now",
+      subreddit: "solana",
+      upvotes: 6700,
+      comments: 89,
+      trend_score: 78,
+      url: "https://reddit.com/r/solana",
+    },
+    {
+      id: "5",
+      title: "The ultimate meme coin strategy",
+      subreddit: "SatoshiStreetBets",
+      upvotes: 9300,
+      comments: 234,
+      trend_score: 83,
+      url: "https://reddit.com/r/satoshistreetbets",
+    },
+    {
+      id: "6",
+      title: "Ape together strong",
+      subreddit: "wallstreetbets",
+      upvotes: 18900,
+      comments: 567,
+      trend_score: 98,
+      url: "https://reddit.com/r/wallstreetbets",
+    },
+  ];
 
   const mockTokens = [
     {
@@ -31,30 +90,6 @@ export default function HomePage() {
       liquidity: 210000,
       marketCap: 890000,
     },
-    {
-      symbol: "SHIB",
-      name: "Shiba Token",
-      price: 0.000034,
-      change24h: 5.67,
-      liquidity: 156000,
-      marketCap: 650000,
-    },
-    {
-      symbol: "WOJAK",
-      name: "Wojak Finance",
-      price: 0.000201,
-      change24h: -12.34,
-      liquidity: 87000,
-      marketCap: 340000,
-    },
-    {
-      symbol: "APE",
-      name: "Ape Together",
-      price: 0.000678,
-      change24h: 28.91,
-      liquidity: 198000,
-      marketCap: 720000,
-    },
   ];
 
   return (
@@ -64,12 +99,22 @@ export default function HomePage() {
         onCreateToken={() => window.location.hash = "#/create"}
       />
 
+      <FeatureHighlight />
+
+      <TrendingMemes
+        memes={mockMemes}
+        onCreateFromMeme={(meme) => {
+          console.log("Creating token from meme:", meme);
+          window.location.hash = "#/create";
+        }}
+      />
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h2 className="text-3xl font-bold">Trending Tokens</h2>
+            <h2 className="text-3xl font-bold">Recent Launches</h2>
             <p className="text-muted-foreground mt-1">
-              Discover the hottest meme tokens on Solana
+              Fair-launched tokens with anti-PVP protection
             </p>
           </div>
         </div>
