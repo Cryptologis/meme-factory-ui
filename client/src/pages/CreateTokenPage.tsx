@@ -37,7 +37,7 @@ export default function CreateTokenPage() {
               <div>
                 <h3 className="font-semibold mb-1">Anti-Bundling</h3>
                 <p className="text-sm text-muted-foreground">
-                  5% max per wallet prevents manipulation
+                  2.5% max per wallet for first 15 minutes
                 </p>
               </div>
             </div>
@@ -80,15 +80,19 @@ export default function CreateTokenPage() {
                 </li>
                 <li className="flex items-start gap-2">
                   <div className="w-1.5 h-1.5 rounded-full bg-primary mt-1.5 shrink-0" />
+                  <span>Max 2.5% per wallet for 15 minutes</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-primary mt-1.5 shrink-0" />
+                  <span>No cooldown between purchases</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-primary mt-1.5 shrink-0" />
                   <span>Automatic liquidity lock (30 days)</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <div className="w-1.5 h-1.5 rounded-full bg-primary mt-1.5 shrink-0" />
-                  <span>Max 5% supply per wallet</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <div className="w-1.5 h-1.5 rounded-full bg-primary mt-1.5 shrink-0" />
-                  <span>Gradual vesting over 7 days</span>
+                  <span>Creator rewards on every trade</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <div className="w-1.5 h-1.5 rounded-full bg-primary mt-1.5 shrink-0" />

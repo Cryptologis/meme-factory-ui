@@ -32,11 +32,11 @@ export default function TrendingMemes({
               <TrendingUp className="w-6 h-6 text-primary" />
               <h2 className="text-3xl font-bold">Trending Memes</h2>
               <Badge className="bg-gradient-to-r from-primary to-chart-2">
-                Reddit Powered
+                AI Powered
               </Badge>
             </div>
             <p className="text-muted-foreground">
-              Create tokens based on viral memes trending on Reddit
+              Create tokens based on viral social media memes
             </p>
           </div>
         </div>

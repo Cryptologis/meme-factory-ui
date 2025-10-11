@@ -20,15 +20,15 @@ export default function FeatureHighlight() {
     },
     {
       icon: TrendingUp,
-      title: "Reddit Trending",
-      description: "Launch tokens based on viral memes from Reddit.",
+      title: "Social Media Trending",
+      description: "Launch tokens based on viral memes from social platforms.",
       badge: "AI Powered",
       color: "from-chart-2 to-chart-3",
     },
     {
       icon: Users,
       title: "Fair Distribution",
-      description: "5% max per wallet, locked liquidity, vesting schedules.",
+      description: "2.5% max per wallet for 15 min, locked liquidity, creator rewards.",
       badge: "Fair Launch",
       color: "from-chart-5 to-chart-4",
     },

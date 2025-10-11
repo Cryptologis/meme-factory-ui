@@ -114,7 +114,7 @@ export default function HomePage() {
           <div>
             <h2 className="text-3xl font-bold">Recent Launches</h2>
             <p className="text-muted-foreground mt-1">
-              Fair-launched tokens with anti-PVP protection
+              Fair-launched tokens with creator rewards & anti-PVP protection
             </p>
           </div>
         </div>

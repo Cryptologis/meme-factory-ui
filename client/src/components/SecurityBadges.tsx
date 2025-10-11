@@ -18,7 +18,7 @@ export default function SecurityBadges({
     antiBundling: true,
     liquidityLocked: true,
     kycEnabled: false,
-    maxWalletPercent: 5,
+    maxWalletPercent: 2.5,
   },
 }: SecurityBadgesProps) {
   return (
@@ -70,7 +70,7 @@ export default function SecurityBadges({
           data-testid="badge-wallet-limit"
         >
           <CheckCircle className="w-4 h-4 text-chart-3" />
-          <span className="text-sm">Max {features.maxWalletPercent}% per wallet</span>
+          <span className="text-sm">{features.maxWalletPercent}% max (15 min)</span>
         </div>
       </div>
 

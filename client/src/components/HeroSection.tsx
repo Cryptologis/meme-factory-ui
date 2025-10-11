@@ -25,7 +25,7 @@ export default function HeroSection({
               </Badge>
               <Badge className="bg-gradient-to-r from-primary to-chart-2">
                 <TrendingUp className="w-3 h-3 mr-1" />
-                Reddit Trending
+                Social Media Powered
               </Badge>
             </div>
             
@@ -36,7 +36,7 @@ export default function HeroSection({
               </span>
             </h1>
             <p className="text-lg sm:text-xl text-muted-foreground max-w-3xl mx-auto">
-              The only launchpad with anti-PVP and anti-bundling protection. Launch tokens based on Reddit trending memes with fair distribution guaranteed.
+              The only launchpad with anti-PVP and anti-bundling protection. Launch tokens based on viral social media memes with fair distribution guaranteed.
             </p>
           </div>
 
@@ -74,10 +74,10 @@ export default function HeroSection({
 
             <div className="p-6 rounded-lg bg-card/50 backdrop-blur-sm border">
               <div className="text-3xl font-bold bg-gradient-to-r from-chart-3 to-primary bg-clip-text text-transparent mb-2">
-                5% Max
+                2.5% Max
               </div>
               <p className="text-sm text-muted-foreground">
-                Per wallet limit prevents whale manipulation
+                First 15 min limit prevents whale manipulation
               </p>
             </div>
 
