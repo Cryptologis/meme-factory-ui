@@ -1,36 +1,94 @@
 import { useState } from "react";
-import { ArrowUpDown, TrendingUp, TrendingDown } from "lucide-react";
+import { TrendingUp, TrendingDown, AlertCircle } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useToast } from "@/hooks/use-toast";
+import { useBuyTokens } from "@/hooks/useBuyTokens";
 
 interface TradingPanelProps {
+  memeAddress?: string;
   tokenSymbol?: string;
   tokenName?: string;
   currentPrice?: number;
   userBalance?: number;
-  onTrade?: (type: "buy" | "sell", amount: number) => void;
+  createdAt?: string;
 }
 
 export default function TradingPanel({
+  memeAddress,
   tokenSymbol = "DOGE",
   tokenName = "Doge Coin",
   currentPrice = 0.000123,
   userBalance = 0,
-  onTrade = (type, amount) => console.log(`${type} ${amount}`),
+  createdAt,
 }: TradingPanelProps) {
+  const { toast } = useToast();
+  const { buyTokens, loading: buyLoading } = useBuyTokens();
   const [amount, setAmount] = useState("");
+  const [maxSol, setMaxSol] = useState("");
   const [activeTab, setActiveTab] = useState<"buy" | "sell">("buy");
 
-  const total = Number(amount) * currentPrice;
+  const isAntiBundlePeriod = createdAt 
+    ? Date.now() - new Date(createdAt).getTime() < 15 * 60 * 1000 
+    : false;
 
-  const handleTrade = () => {
-    if (amount && Number(amount) > 0) {
-      onTrade(activeTab, Number(amount));
-      setAmount("");
+  const total = Number(amount) * currentPrice;
+  const estimatedSol = total || (Number(amount) * 0.000001);
+
+  const handleBuy = async () => {
+    if (!memeAddress) {
+      toast({
+        title: "Error",
+        description: "Please select a token first",
+        variant: "destructive",
+      });
+      return;
     }
+
+    if (!amount || Number(amount) <= 0) {
+      toast({
+        title: "Error",
+        description: "Please enter a valid amount",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const tokenAmount = Math.floor(Number(amount) * 1_000_000);
+      const maxSolCost = Math.floor((Number(maxSol) || estimatedSol * 1.1) * 1_000_000_000);
+
+      const txSignature = await buyTokens({
+        memeAddress,
+        amount: tokenAmount,
+        maxSolCost,
+      });
+
+      toast({
+        title: "Success!",
+        description: `Bought ${amount} ${tokenSymbol}! TX: ${txSignature.slice(0, 8)}...`,
+      });
+
+      setAmount("");
+      setMaxSol("");
+    } catch (err: any) {
+      console.error("Buy error:", err);
+      toast({
+        title: "Error",
+        description: err?.message || "Failed to buy tokens",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleSell = () => {
+    toast({
+      title: "Coming Soon",
+      description: "Sell functionality will be available soon!",
+    });
   };
 
   return (
@@ -55,6 +113,20 @@ export default function TradingPanel({
         </div>
       </div>
 
+      {isAntiBundlePeriod && (
+        <div className="mb-4 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
+          <div className="flex items-start gap-2">
+            <AlertCircle className="w-4 h-4 text-yellow-600 mt-0.5" />
+            <div className="text-sm text-yellow-600">
+              <p className="font-semibold">Anti-Bundle Period Active</p>
+              <p className="text-xs mt-1">
+                Purchases limited to 2.5% of supply for the first 15 minutes after launch.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "buy" | "sell")}>
         <TabsList className="grid w-full grid-cols-2 mb-6">
           <TabsTrigger value="buy" data-testid="tab-buy" className="gap-2">
@@ -69,22 +141,43 @@ export default function TradingPanel({
 
         <TabsContent value="buy" className="space-y-4 mt-0">
           <div className="space-y-2">
-            <Label htmlFor="buy-amount">Amount</Label>
+            <Label htmlFor="buy-amount">
+              Amount ({tokenSymbol})
+              {!isAntiBundlePeriod && (
+                <span className="ml-2 text-xs text-green-600">No limit</span>
+              )}
+            </Label>
             <Input
               id="buy-amount"
               type="number"
-              placeholder="0.00"
+              placeholder="1000000"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               data-testid="input-buy-amount"
+              step="any"
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="max-sol">Max SOL (Slippage Protection)</Label>
+            <Input
+              id="max-sol"
+              type="number"
+              placeholder={`Auto: ${(estimatedSol * 1.1).toFixed(4)}`}
+              value={maxSol}
+              onChange={(e) => setMaxSol(e.target.value)}
+              step="0.01"
+            />
+            <p className="text-xs text-muted-foreground">
+              Leave empty for 10% slippage tolerance
+            </p>
           </div>
 
           <div className="p-4 bg-muted/50 rounded-md space-y-2">
             <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Total Cost</span>
+              <span className="text-muted-foreground">Estimated Cost</span>
               <span className="font-mono font-semibold" data-testid="text-total-cost">
-                {total.toFixed(6)} SOL
+                ~{estimatedSol.toFixed(6)} SOL
               </span>
             </div>
             <div className="flex justify-between text-sm">
@@ -95,11 +188,11 @@ export default function TradingPanel({
 
           <Button
             className="w-full bg-chart-3 hover:bg-chart-3/90"
-            onClick={handleTrade}
-            disabled={!amount || Number(amount) <= 0}
+            onClick={handleBuy}
+            disabled={!amount || Number(amount) <= 0 || !memeAddress || buyLoading}
             data-testid="button-confirm-buy"
           >
-            Buy {tokenSymbol}
+            {buyLoading ? "Buying..." : `Buy ${tokenSymbol}`}
           </Button>
         </TabsContent>
 
@@ -126,7 +219,7 @@ export default function TradingPanel({
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">You'll Receive</span>
               <span className="font-mono font-semibold" data-testid="text-receive-amount">
-                {total.toFixed(6)} SOL
+                ~{total.toFixed(6)} SOL
               </span>
             </div>
             <div className="flex justify-between text-sm">
@@ -138,7 +231,7 @@ export default function TradingPanel({
           <Button
             variant="destructive"
             className="w-full"
-            onClick={handleTrade}
+            onClick={handleSell}
             disabled={!amount || Number(amount) <= 0 || Number(amount) > userBalance}
             data-testid="button-confirm-sell"
           >

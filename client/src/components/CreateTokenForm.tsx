@@ -1,162 +1,283 @@
+// Clean rebuild - fix undefined error
 import { useState } from "react";
-import { Sparkles, Loader2 } from "lucide-react";
-import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
+import { Slider } from "@/components/ui/slider";
+import { useToast } from "@/hooks/use-toast";
+import { useCreateAndBuy } from "@/hooks/useCreateAndBuy";
+import { Loader2, Upload, X } from "lucide-react";
 
 interface CreateTokenFormProps {
-  onSubmit?: (data: TokenFormData) => void;
+  onSuccess?: (signature: string) => void;
 }
 
-export interface TokenFormData {
-  name: string;
-  symbol: string;
-  decimals: number;
-  supply: number;
-}
-
-export default function CreateTokenForm({
-  onSubmit = (data) => console.log("Token created:", data),
-}: CreateTokenFormProps) {
-  const [formData, setFormData] = useState<TokenFormData>({
+export default function CreateTokenForm({ onSuccess }: CreateTokenFormProps) {
+  const { toast } = useToast();
+  const { createAndBuy, loading } = useCreateAndBuy();
+  const [formData, setFormData] = useState({
     name: "",
     symbol: "",
-    decimals: 9,
-    supply: 1000000,
+    initialSupply: 1000,
   });
-  const [isCreating, setIsCreating] = useState(false);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [buyPercentage, setBuyPercentage] = useState(1); // Start at 1% NOT 5%
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: name === 'initialSupply' ? Number(value) : value
+    }));
+  };
+
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        toast({
+          title: "Error",
+          description: "Image must be less than 5MB",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setImageFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeImage = () => {
+    setImageFile(null);
+    setImagePreview(null);
+  };
+
+  const simpleHash = (str: string): number[] => {
+    const hash = new Uint8Array(32);
+    for (let i = 0; i < str.length && i < 32; i++) {
+      hash[i] = str.charCodeAt(i) % 256;
+    }
+    for (let i = str.length; i < 32; i++) {
+      hash[i] = (hash[i % str.length] * (i + 1)) % 256;
+    }
+    return Array.from(hash);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsCreating(true);
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-    onSubmit(formData);
-    setIsCreating(false);
+    
+    if (!formData.name || !formData.symbol || !imageFile) {
+      toast({
+        title: "Error",
+        description: "Please fill in all fields and upload an image",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // HARD CAP at 2.4% to stay under 2.5% limit
+    const safeBuyPercentage = Math.min(buyPercentage, 2.4);
+    
+    if (buyPercentage > 2.4) {
+      toast({
+        title: "Warning",
+        description: `Buy percentage capped at 2.4% (you selected ${buyPercentage}%)`,
+      });
+    }
+
+    try {
+      const hashSource = `${imageFile.name}-${Date.now()}-${formData.symbol}`;
+      const imageHash = simpleHash(hashSource);
+      const uri = imageHash.slice(0, 8).map(b => b.toString(16).padStart(2, '0')).join('');
+
+      console.log('Creating token with URI:', uri, 'length:', uri.length);
+
+      // Safe calculation to avoid overflow
+      const initialSupply = formData.initialSupply * 1_000_000;
+      
+      // Calculate buy amount - CAPPED at 2.4%
+      const buyAmount = Math.floor((initialSupply / 100) * safeBuyPercentage);
+      
+      // Double-check cap
+      const maxAllowedBuy = Math.floor(initialSupply * 0.024);
+      const finalBuyAmount = Math.min(buyAmount, maxAllowedBuy);
+      
+      // Calculate cost using pump.fun bonding curve
+      const VIRTUAL_SOL_RESERVES = 30_000_000_000;
+      const VIRTUAL_TOKEN_RESERVES = 1_000_000_000;
+      const k = VIRTUAL_SOL_RESERVES * VIRTUAL_TOKEN_RESERVES;
+      const currentTokenReserve = VIRTUAL_TOKEN_RESERVES;
+      const newTokenReserve = currentTokenReserve - finalBuyAmount;
+      const newSolReserve = k / newTokenReserve;
+      const currentSolReserve = k / currentTokenReserve;
+      const estimatedCost = Math.floor(newSolReserve - currentSolReserve);
+      const maxSolCost = Math.floor(estimatedCost * 1.5);
+
+      console.log('Initial supply:', initialSupply);
+      console.log('Buy percentage:', safeBuyPercentage);
+      console.log('Buy amount:', finalBuyAmount);
+      console.log('Percentage of supply:', ((finalBuyAmount / initialSupply) * 100).toFixed(4) + '%');
+
+      const txSignature = await createAndBuy({
+        name: formData.name,
+        symbol: formData.symbol,
+        uri,
+        imageHash,
+        initialSupply,
+        buyAmount: finalBuyAmount,
+        maxSolCost,
+      });
+
+      if (onSuccess && txSignature) {
+        onSuccess(txSignature);
+      }
+
+      toast({
+        title: "Success!",
+        description: `Token created! TX: ${txSignature.slice(0, 8)}...`,
+      });
+
+      setFormData({ name: "", symbol: "", initialSupply: 1000 });
+      setImageFile(null);
+      setImagePreview(null);
+      setBuyPercentage(1);
+    } catch (err: any) {
+      console.error("Token creation error:", err);
+      toast({
+        title: "Error",
+        description: err?.message || "Failed to create token",
+        variant: "destructive",
+      });
+    }
   };
 
+  const calculatedTokens = Math.floor((formData.initialSupply / 100) * Math.min(buyPercentage, 2.4));
+
   return (
-    <Card className="p-6 max-w-2xl mx-auto">
-      <div className="flex items-center gap-2 mb-6">
-        <Sparkles className="w-6 h-6 text-primary" />
-        <h2 className="text-2xl font-bold">Create Your Token</h2>
+    <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="space-y-2">
+        <Label htmlFor="name">Token Name</Label>
+        <Input
+          id="name"
+          name="name"
+          placeholder="Doge Killer"
+          value={formData.name}
+          onChange={handleInputChange}
+          required
+        />
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="space-y-2">
-          <Label htmlFor="token-name">Token Name</Label>
-          <Input
-            id="token-name"
-            placeholder="e.g., My Awesome Token"
-            value={formData.name}
-            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            required
-            data-testid="input-token-name"
-          />
-        </div>
+      <div className="space-y-2">
+        <Label htmlFor="symbol">Token Symbol</Label>
+        <Input
+          id="symbol"
+          name="symbol"
+          placeholder="DGKILLER"
+          value={formData.symbol}
+          onChange={handleInputChange}
+          maxLength={10}
+          required
+        />
+      </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="token-symbol">Token Symbol</Label>
-          <Input
-            id="token-symbol"
-            placeholder="e.g., MAT"
-            value={formData.symbol}
-            onChange={(e) =>
-              setFormData({ ...formData, symbol: e.target.value.toUpperCase() })
-            }
-            maxLength={10}
-            required
-            data-testid="input-token-symbol"
-          />
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="token-decimals">Decimals</Label>
-            <Input
-              id="token-decimals"
-              type="number"
-              min="0"
-              max="18"
-              value={formData.decimals}
-              onChange={(e) =>
-                setFormData({ ...formData, decimals: Number(e.target.value) })
-              }
-              required
-              data-testid="input-token-decimals"
+      <div className="space-y-2">
+        <Label htmlFor="image">Token Image</Label>
+        {!imagePreview ? (
+          <div className="border-2 border-dashed rounded-lg p-8 text-center hover:border-primary/50 transition-colors cursor-pointer">
+            <input
+              type="file"
+              id="image"
+              accept="image/*"
+              onChange={handleImageSelect}
+              className="hidden"
             />
+            <label htmlFor="image" className="cursor-pointer block">
+              <Upload className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+              <p className="text-sm text-muted-foreground">
+                Click to upload image (max 5MB)
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                PNG, JPG, GIF supported
+              </p>
+            </label>
           </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="token-supply">Total Supply</Label>
-            <Input
-              id="token-supply"
-              type="number"
-              min="1"
-              value={formData.supply}
-              onChange={(e) =>
-                setFormData({ ...formData, supply: Number(e.target.value) })
-              }
-              required
-              data-testid="input-token-supply"
+        ) : (
+          <div className="relative border rounded-lg overflow-hidden">
+            <img
+              src={imagePreview}
+              alt="Token preview"
+              className="w-full h-48 object-cover"
             />
+            <button
+              type="button"
+              onClick={removeImage}
+              className="absolute top-2 right-2 p-1 bg-black/50 hover:bg-black/70 rounded-full"
+            >
+              <X className="w-4 h-4 text-white" />
+            </button>
           </div>
+        )}
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="initialSupply">Initial Supply (millions)</Label>
+        <Input
+          id="initialSupply"
+          name="initialSupply"
+          type="number"
+          placeholder="1000"
+          value={formData.initialSupply}
+          onChange={handleInputChange}
+          min={1}
+          required
+        />
+      </div>
+
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <Label>Buy {buyPercentage.toFixed(1)}% on launch (MAX 2.4%)</Label>
+          <span className="text-sm text-muted-foreground">
+            {calculatedTokens.toLocaleString()} tokens
+          </span>
         </div>
+        <Slider
+          value={[buyPercentage]}
+          onValueChange={(value) => setBuyPercentage(Math.min(value[0], 2.4))}
+          min={0.5}
+          max={2.4}
+          step={0.1}
+          className="w-full"
+        />
+        <p className="text-xs text-red-500 font-semibold">
+          ⚠️ Anti-bundle protection: Initial purchase HARD CAPPED at 2.4%
+        </p>
+        <p className="text-xs text-muted-foreground">
+          No limit after 15-minute cooldown period
+        </p>
+      </div>
 
-        <Card className="p-4 bg-muted/50">
-          <h3 className="font-semibold mb-3">Preview</h3>
-          <div className="space-y-2 text-sm">
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Name:</span>
-              <span data-testid="text-preview-name">{formData.name || "—"}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Symbol:</span>
-              <span className="font-mono" data-testid="text-preview-symbol">
-                {formData.symbol || "—"}
-              </span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Decimals:</span>
-              <span data-testid="text-preview-decimals">{formData.decimals}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Total Supply:</span>
-              <span data-testid="text-preview-supply">
-                {formData.supply.toLocaleString()}
-              </span>
-            </div>
-          </div>
-        </Card>
-
-        <div className="flex items-center justify-between p-4 bg-muted/50 rounded-md">
-          <span className="text-sm text-muted-foreground">Estimated Fee:</span>
-          <div className="flex items-center gap-2">
-            <span className="font-mono font-semibold">~0.001 SOL</span>
-            <Badge variant="secondary">Devnet</Badge>
-          </div>
-        </div>
-
-        <Button
-          type="submit"
-          className="w-full gap-2 bg-gradient-to-r from-primary to-chart-2 hover:opacity-90"
-          disabled={isCreating}
-          data-testid="button-create-token"
-        >
-          {isCreating ? (
-            <>
-              <Loader2 className="w-4 h-4 animate-spin" />
-              Creating Token...
-            </>
-          ) : (
-            <>
-              <Sparkles className="w-4 h-4" />
-              Create Token
-            </>
-          )}
-        </Button>
-      </form>
-    </Card>
+      <Button
+        type="submit"
+        className="w-full"
+        size="lg"
+        disabled={loading}
+      >
+        {loading ? (
+          <>
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            Creating Token...
+          </>
+        ) : (
+          "Launch Token Now"
+        )}
+      </Button>
+    </form>
   );
 }
+// Force rebuild
