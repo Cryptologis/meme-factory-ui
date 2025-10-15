@@ -99,7 +99,7 @@ export default function CreateTokenForm({ onSuccess }: CreateTokenFormProps) {
       console.log('Creating token with URI:', uri, 'length:', uri.length);
 
       // Safe calculation to avoid overflow
-      const initialSupply = formData.initialSupply * 1_000_000;
+      const initialSupply = 1_000_000_000;
       
       // Calculate buy amount - CAPPED at 2.4%
       const buyAmount = Math.floor((initialSupply / 100) * safeBuyPercentage);
@@ -109,15 +109,10 @@ export default function CreateTokenForm({ onSuccess }: CreateTokenFormProps) {
       const finalBuyAmount = Math.min(buyAmount, maxAllowedBuy);
       
       // Calculate cost using pump.fun bonding curve
-      const VIRTUAL_SOL_RESERVES = 30_000_000_000;
-      const VIRTUAL_TOKEN_RESERVES = 1_000_000_000;
-      const k = VIRTUAL_SOL_RESERVES * VIRTUAL_TOKEN_RESERVES;
-      const currentTokenReserve = VIRTUAL_TOKEN_RESERVES;
-      const newTokenReserve = currentTokenReserve - finalBuyAmount;
-      const newSolReserve = k / newTokenReserve;
-      const currentSolReserve = k / currentTokenReserve;
-      const estimatedCost = Math.floor(newSolReserve - currentSolReserve);
-      const maxSolCost = Math.floor(estimatedCost * 1.5);
+      const currentPrice = 1_000;
+      const avgPrice = currentPrice + (finalBuyAmount / 2);
+      const estimatedCost = finalBuyAmount * avgPrice;
+      const maxSolCost = Math.floor(estimatedCost * 2); 
 
       console.log('Initial supply:', initialSupply);
       console.log('Buy percentage:', safeBuyPercentage);

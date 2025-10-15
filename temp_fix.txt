@@ -1,0 +1,11 @@
+      const estimatedCost = Math.floor(newSolReserve - currentSolReserve);
+      // Use 10 SOL as max to handle any slippage
+      const maxSolCost = Math.floor(10 * 1_000_000_000); // 10 SOL in lamports
+
+      console.log('Initial supply:', initialSupply);
+      console.log('Buy percentage:', safeBuyPercentage);
+      console.log('Buy amount:', finalBuyAmount);
+      console.log('Estimated cost (lamports):', estimatedCost);
+      console.log('Estimated cost (SOL):', estimatedCost / 1_000_000_000);
+      console.log('Max SOL cost:', maxSolCost / 1_000_000_000, 'SOL');
+      console.log('Percentage of supply:', ((finalBuyAmount / initialSupply) * 100).toFixed(4) + '%');
