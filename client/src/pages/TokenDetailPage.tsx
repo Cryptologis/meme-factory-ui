@@ -28,20 +28,26 @@ export default function TokenDetailPage() {
   const [timeframe, setTimeframe] = useState("1H");
   
   const chartContainerRef = useRef<HTMLDivElement>(null);
+  const hasLoadedRef = useRef(false);
 
+  // FIXED: Only load once when component mounts with mintAddress
   useEffect(() => {
-    if (mintAddress && program) {
+    if (mintAddress && program && !hasLoadedRef.current) {
+      hasLoadedRef.current = true;
       loadTokenData(mintAddress);
     }
-  }, [mintAddress, program]);
+  }, [mintAddress]);
 
+  // REMOVED: Chart useEffect that was causing re-renders
   useEffect(() => {
-    if (chartContainerRef.current && token) {
+    if (chartContainerRef.current && !chartContainerRef.current.innerHTML) {
       initializeChart();
     }
-  }, [token, timeframe]);
+  }, [chartContainerRef.current]);
 
   const loadTokenData = async (address: string) => {
+    if (!program) return;
+    
     setLoading(true);
     try {
       const allMemes = await program.account.memeToken.all();
@@ -64,6 +70,7 @@ export default function TokenDetailPage() {
         isGraduated: tokenData.isGraduated,
       });
     } catch (error: any) {
+      console.error("Error loading token:", error);
       toast({
         title: "Error",
         description: error.message,
@@ -77,7 +84,6 @@ export default function TokenDetailPage() {
   const initializeChart = () => {
     if (!chartContainerRef.current) return;
 
-    // Temporarily show placeholder instead of chart
     chartContainerRef.current.innerHTML = `
       <div style="display: flex; align-items: center; justify-content: center; height: 400px; background: #1f2937; border-radius: 8px; color: #9ca3af;">
         <div style="text-align: center;">
@@ -116,6 +122,8 @@ export default function TokenDetailPage() {
       });
 
       setBuyAmount("");
+      // Reload token data after successful trade
+      hasLoadedRef.current = false;
       loadTokenData(token.mint);
     } catch (error: any) {
       toast({
@@ -148,6 +156,8 @@ export default function TokenDetailPage() {
       });
 
       setSellAmount("");
+      // Reload token data after successful trade
+      hasLoadedRef.current = false;
       loadTokenData(token.mint);
     } catch (error: any) {
       toast({
