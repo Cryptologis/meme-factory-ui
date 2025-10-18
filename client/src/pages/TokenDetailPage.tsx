@@ -30,7 +30,6 @@ export default function TokenDetailPage() {
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const hasLoadedRef = useRef(false);
 
-  // FIXED: Only load once when component mounts with mintAddress
   useEffect(() => {
     if (mintAddress && program && !hasLoadedRef.current) {
       hasLoadedRef.current = true;
@@ -38,12 +37,11 @@ export default function TokenDetailPage() {
     }
   }, [mintAddress]);
 
-  // REMOVED: Chart useEffect that was causing re-renders
   useEffect(() => {
-    if (chartContainerRef.current && !chartContainerRef.current.innerHTML) {
+    if (token && chartContainerRef.current && !chartContainerRef.current.innerHTML) {
       initializeChart();
     }
-  }, [chartContainerRef.current]);
+  }, [token]);
 
   const loadTokenData = async (address: string) => {
     if (!program) return;
@@ -122,7 +120,6 @@ export default function TokenDetailPage() {
       });
 
       setBuyAmount("");
-      // Reload token data after successful trade
       hasLoadedRef.current = false;
       loadTokenData(token.mint);
     } catch (error: any) {
@@ -156,7 +153,6 @@ export default function TokenDetailPage() {
       });
 
       setSellAmount("");
-      // Reload token data after successful trade
       hasLoadedRef.current = false;
       loadTokenData(token.mint);
     } catch (error: any) {
