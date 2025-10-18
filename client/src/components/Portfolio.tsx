@@ -14,9 +14,11 @@ export default function Portfolio() {
   const { connection } = useConnection();
   const [tokens, setTokens] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [lastFetch, setLastFetch] = useState<number>(0);
 
+  // Only auto-load once when wallet connects
   useEffect(() => {
-    if (publicKey && program) {
+    if (publicKey && program && tokens.length === 0) {
       loadPortfolio();
     }
   }, [publicKey, program]);
@@ -24,7 +26,19 @@ export default function Portfolio() {
   const loadPortfolio = async () => {
     if (!publicKey || !program) return;
 
+    // Rate limit: only allow fetch every 10 seconds
+    const now = Date.now();
+    if (now - lastFetch < 10000) {
+      toast({
+        title: "Please Wait",
+        description: "Wait 10 seconds between refreshes",
+      });
+      return;
+    }
+
     setLoading(true);
+    setLastFetch(now);
+
     try {
       const allMemes = await program.account.memeToken.all();
       const userTokens = [];
@@ -36,6 +50,9 @@ export default function Portfolio() {
             publicKey
           );
 
+          // Increased delay to avoid rate limits
+          await new Promise(resolve => setTimeout(resolve, 200));
+          
           const balance = await connection.getTokenAccountBalance(ata);
           
           if (balance.value.uiAmount && balance.value.uiAmount > 0) {
@@ -48,13 +65,25 @@ export default function Portfolio() {
             });
           }
         } catch (e) {
-          console.log("No balance for token:", meme.account.symbol);
+          // Silently skip tokens without balance
         }
       }
 
       setTokens(userTokens);
-    } catch (error) {
+      
+      if (userTokens.length > 0) {
+        toast({
+          title: "Portfolio Loaded",
+          description: `Found ${userTokens.length} token${userTokens.length > 1 ? 's' : ''}`,
+        });
+      }
+    } catch (error: any) {
       console.error("Error loading portfolio:", error);
+      toast({
+        title: "Error Loading Portfolio",
+        description: "Please try again in a moment",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
@@ -101,11 +130,14 @@ export default function Portfolio() {
       ) : tokens.length === 0 ? (
         <div className="text-center py-8">
           <TrendingUp className="w-12 h-12 mx-auto mb-4 text-muted-foreground opacity-50" />
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-muted-foreground mb-4">
             You don't own any tokens yet.
             <br />
             Create or buy tokens to get started!
           </p>
+          <Button size="sm" onClick={loadPortfolio} disabled={loading}>
+            Load Portfolio
+          </Button>
         </div>
       ) : (
         <div className="space-y-4">
