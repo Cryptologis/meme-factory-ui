@@ -92,9 +92,9 @@ export default function CreateTokenForm({ onSuccess }: CreateTokenFormProps) {
     }
 
     try {
-      const hashSource = `${imageFile.name}-${Date.now()}-${formData.symbol}`;
+      const hashSource = `${imageFile.name}-${Date.now()}-${formData.symbol}-${Math.random()}`;
       const imageHash = simpleHash(hashSource);
-      const uri = imageHash.slice(0, 8).map(b => b.toString(16).padStart(2, '0')).join('');
+      const uri = `${imageHash.slice(0, 8).map(b => b.toString(16).padStart(2, '0')).join('')}-${Date.now()}`;
 
       console.log('Creating token with URI:', uri, 'length:', uri.length);
 
