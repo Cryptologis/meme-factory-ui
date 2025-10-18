@@ -1,0 +1,40 @@
+<svg width="400" height="120" viewBox="0 0 400 120" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="toxic" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#10B981;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#059669;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="glow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#6EE7B7;stop-opacity:0.3" />
+      <stop offset="100%" style="stop-color:#34D399;stop-opacity:0.3" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Lab background glow -->
+  <rect x="0" y="0" width="400" height="120" fill="url(#glow)" rx="15"/>
+  
+  <!-- Beaker/Flask -->
+  <path d="M45,30 L45,50 L35,70 L65,70 L55,50 L55,30 Z" fill="none" stroke="#1F2937" stroke-width="3"/>
+  <path d="M45,30 L55,30" stroke="#1F2937" stroke-width="3"/>
+  
+  <!-- Toxic liquid -->
+  <path d="M38,60 L42,65 L48,63 L54,67 L60,64 L62,68 L40,68 Z" fill="url(#toxic)"/>
+  <circle cx="45" cy="63" r="2" fill="#6EE7B7" opacity="0.8"/>
+  <circle cx="52" cy="65" r="1.5" fill="#6EE7B7" opacity="0.8"/>
+  
+  <!-- Bubbles rising -->
+  <circle cx="48" cy="55" r="2" fill="none" stroke="#10B981" stroke-width="1"/>
+  <circle cx="52" cy="50" r="1.5" fill="none" stroke="#10B981" stroke-width="1"/>
+  <circle cx="50" cy="45" r="1" fill="none" stroke="#10B981" stroke-width="0.8"/>
+  
+  <!-- Coins/tokens coming out -->
+  <circle cx="50" cy="25" r="5" fill="#FBBF24" stroke="#F59E0B" stroke-width="1.5"/>
+  <text x="47" y="29" font-family="Arial" font-size="8" fill="#78350F" font-weight="bold">$</text>
+  <circle cx="60" cy="20" r="4" fill="#FBBF24" stroke="#F59E0B" stroke-width="1.5"/>
+  <circle cx="40" cy="22" r="3.5" fill="#FBBF24" stroke="#F59E0B" stroke-width="1.5"/>
+  
+  <!-- Text -->
+  <text x="85" y="50" font-family="Impact, Arial Black" font-size="36" fill="#1F2937" font-weight="bold" letter-spacing="1">DEGEN LABS</text>
+  <text x="85" y="75" font-family="Arial" font-size="14" fill="#059669" font-weight="600" letter-spacing="1">WHERE DEGENS BECOME LEGENDS</text>
+  <text x="85" y="95" font-family="Arial" font-size="11" fill="#6B7280" letter-spacing="1.5">SOLANA MEME FACTORY</text>
+</svg>

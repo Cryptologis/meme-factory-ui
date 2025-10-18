@@ -1,0 +1,18 @@
+<svg width="200" height="60" viewBox="0 0 200 60" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="grad3" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#8B5CF6;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#EC4899;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#3B82F6;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Rounded square -->
+  <rect x="5" y="5" width="50" height="50" fill="url(#grad3)" rx="12"/>
+  
+  <!-- MF letters -->
+  <text x="13" y="43" font-family="Arial Black, sans-serif" font-size="32" fill="white" font-weight="bold">MF</text>
+  
+  <!-- Full text -->
+  <text x="65" y="38" font-family="Arial Black, sans-serif" font-size="20" fill="#1F2937" font-weight="bold">MEME FACTORY</text>
+</svg>

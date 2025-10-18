@@ -5,7 +5,6 @@ import { Card } from "@/components/ui/card";
 import { Search, TrendingUp, TrendingDown } from "lucide-react";
 import Portfolio from "@/components/Portfolio";
 import BondingCurveProgress from "@/components/BondingCurveProgress";
-import PriceChart from "@/components/PriceChart";
 import { useProgram } from "@/hooks/useProgram";
 import { useWallet } from "@/hooks/useWallet";
 import { useBuyTokens } from "@/hooks/useBuyTokens";
@@ -222,7 +221,6 @@ export default function TradePage() {
                   targetSol={85}
                 />
 
-                <PriceChart tokenSymbol={selectedToken.symbol} />
 
                 <Card className="p-6">
                   <div className="space-y-4 mb-4 p-4 bg-green-500/5 rounded-lg border border-green-500/20">

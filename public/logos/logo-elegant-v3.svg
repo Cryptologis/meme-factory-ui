@@ -1,0 +1,19 @@
+<svg width="420" height="110" viewBox="0 0 420 110" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="premiumGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#111827;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#374151;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <rect x="5" y="5" width="410" height="100" rx="20" fill="white" stroke="#E5E7EB" stroke-width="1"/>
+  <path d="M30,55 L50,35 L70,55" stroke="#9945FF" stroke-width="3" fill="none" opacity="0.1" stroke-linecap="round"/>
+  <path d="M30,65 L50,45 L70,65" stroke="#14F195" stroke-width="3" fill="none" opacity="0.1" stroke-linecap="round"/>
+  <rect x="20" y="25" width="70" height="60" rx="12" fill="url(#premiumGrad)"/>
+  <text x="38" y="65" font-family="Georgia" font-size="38" fill="#9945FF" font-weight="bold" font-style="italic">M</text>
+  <text x="105" y="48" font-family="Georgia" font-size="28" fill="#111827" font-weight="700">Meme Factory</text>
+  <rect x="105" y="55" width="180" height="2" fill="url(#premiumGrad)"/>
+  <text x="105" y="75" font-family="Arial" font-size="11" fill="#6B7280" letter-spacing="2">SOLANA LAUNCHPAD</text>
+  <circle cx="375" cy="60" r="23" fill="#F9FAFB" stroke="#9945FF" stroke-width="1.5"/>
+  <path d="M365,67 L375,57 L385,67" stroke="#9945FF" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <path d="M365,62 L375,52 L385,62" stroke="#14F195" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+</svg>
