@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -23,15 +23,18 @@ export default function TradePage() {
   const [loading, setLoading] = useState(false);
   const [buyAmount, setBuyAmount] = useState("");
   const [sellAmount, setSellAmount] = useState("");
+  
+  const hasLoadedFromUrlRef = useRef(false);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const tokenParam = params.get('token');
-    if (tokenParam && program) {
+    if (tokenParam && program && !hasLoadedFromUrlRef.current) {
+      hasLoadedFromUrlRef.current = true;
       setSearchAddress(tokenParam);
       searchTokenByAddress(tokenParam);
     }
-  }, [program]);
+  }, []);
 
   const searchTokenByAddress = async (address: string) => {
     if (!program || !address) return;
@@ -220,7 +223,6 @@ export default function TradePage() {
                   totalSupply={selectedToken.totalSupply}
                   targetSol={85}
                 />
-
 
                 <Card className="p-6">
                   <div className="space-y-4 mb-4 p-4 bg-green-500/5 rounded-lg border border-green-500/20">
