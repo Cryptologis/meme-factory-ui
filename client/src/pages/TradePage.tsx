@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Search, TrendingUp, TrendingDown } from "lucide-react";
 import Portfolio from "@/components/Portfolio";
+import BondingCurveProgress from "@/components/BondingCurveProgress";
 import { useProgram } from "@/hooks/useProgram";
 import { useWallet } from "@/hooks/useWallet";
 import { useBuyTokens } from "@/hooks/useBuyTokens";
@@ -190,80 +191,92 @@ export default function TradePage() {
             </Card>
 
             {selectedToken && (
-              <Card className="p-6">
-                <div className="mb-4">
-                  <h2 className="text-2xl font-bold mb-1">{selectedToken.name}</h2>
-                  <p className="text-muted-foreground mb-2">{selectedToken.symbol}</p>
-                  <div className="text-xs font-mono text-muted-foreground space-y-1">
-                    <p>Token CA: {selectedToken.mint}</p>
-                    <p>Meme PDA: {selectedToken.pda}</p>
+              <>
+                <Card className="p-6">
+                  <div className="mb-4">
+                    <h2 className="text-2xl font-bold mb-1">{selectedToken.name}</h2>
+                    <p className="text-muted-foreground mb-2">{selectedToken.symbol}</p>
+                    <div className="text-xs font-mono text-muted-foreground space-y-1">
+                      <p>Token CA: {selectedToken.mint}</p>
+                      <p>Meme PDA: {selectedToken.pda}</p>
+                    </div>
                   </div>
-                </div>
-                
-                <div className="grid grid-cols-2 gap-4 text-sm mb-6">
-                  <div className="p-3 bg-muted/50 rounded-lg">
-                    <p className="text-muted-foreground mb-1">Virtual SOL</p>
-                    <p className="font-mono font-semibold">
-                      {(Number(selectedToken.virtualSolReserves.toString()) / 1e9).toFixed(2)} SOL
-                    </p>
+                  
+                  <div className="grid grid-cols-2 gap-4 text-sm mb-6">
+                    <div className="p-3 bg-muted/50 rounded-lg">
+                      <p className="text-muted-foreground mb-1">Virtual SOL</p>
+                      <p className="font-mono font-semibold">
+                        {(Number(selectedToken.virtualSolReserves.toString()) / 1e9).toFixed(2)} SOL
+                      </p>
+                    </div>
+                    <div className="p-3 bg-muted/50 rounded-lg">
+                      <p className="text-muted-foreground mb-1">Virtual Tokens</p>
+                      <p className="font-mono font-semibold">
+                        {(Number(selectedToken.virtualTokenReserves.toString()) / 1e15).toFixed(0)}K
+                      </p>
+                    </div>
                   </div>
-                  <div className="p-3 bg-muted/50 rounded-lg">
-                    <p className="text-muted-foreground mb-1">Virtual Tokens</p>
-                    <p className="font-mono font-semibold">
-                      {(Number(selectedToken.virtualTokenReserves.toString()) / 1e15).toFixed(0)}K
-                    </p>
-                  </div>
-                </div>
+                </Card>
 
-                <div className="space-y-4 mb-4 p-4 bg-green-500/5 rounded-lg border border-green-500/20">
-                  <h3 className="font-semibold flex items-center gap-2">
-                    <TrendingUp className="w-5 h-5 text-green-500" />
-                    Buy Tokens
-                  </h3>
-                  <div className="flex gap-2">
-                    <Input
-                      type="number"
-                      placeholder="Amount in SOL (e.g., 0.1)"
-                      value={buyAmount}
-                      onChange={(e) => setBuyAmount(e.target.value)}
-                      step="0.01"
-                      disabled={buyLoading}
-                    />
-                    <Button 
-                      onClick={handleBuy} 
-                      disabled={buyLoading || !publicKey}
-                      className="bg-green-600 hover:bg-green-700 whitespace-nowrap"
-                    >
-                      {buyLoading ? "Buying..." : "Buy"}
-                    </Button>
-                  </div>
-                </div>
+                {/* NEW: Bonding Curve Progress */}
+                <BondingCurveProgress
+                  virtualSolReserves={selectedToken.virtualSolReserves}
+                  virtualTokenReserves={selectedToken.virtualTokenReserves}
+                  totalSupply={selectedToken.totalSupply}
+                  targetSol={85}
+                />
 
-                <div className="space-y-4 p-4 bg-red-500/5 rounded-lg border border-red-500/20">
-                  <h3 className="font-semibold flex items-center gap-2">
-                    <TrendingDown className="w-5 h-5 text-red-500" />
-                    Sell Tokens
-                  </h3>
-                  <div className="flex gap-2">
-                    <Input
-                      type="number"
-                      placeholder="Amount of tokens (e.g., 1000000)"
-                      value={sellAmount}
-                      onChange={(e) => setSellAmount(e.target.value)}
-                      step="100000"
-                      disabled={sellLoading}
-                    />
-                    <Button 
-                      onClick={handleSell}
-                      disabled={sellLoading || !publicKey}
-                      variant="destructive"
-                      className="whitespace-nowrap"
-                    >
-                      {sellLoading ? "Selling..." : "Sell"}
-                    </Button>
+                <Card className="p-6">
+                  <div className="space-y-4 mb-4 p-4 bg-green-500/5 rounded-lg border border-green-500/20">
+                    <h3 className="font-semibold flex items-center gap-2">
+                      <TrendingUp className="w-5 h-5 text-green-500" />
+                      Buy Tokens
+                    </h3>
+                    <div className="flex gap-2">
+                      <Input
+                        type="number"
+                        placeholder="Amount in SOL (e.g., 0.1)"
+                        value={buyAmount}
+                        onChange={(e) => setBuyAmount(e.target.value)}
+                        step="0.01"
+                        disabled={buyLoading}
+                      />
+                      <Button 
+                        onClick={handleBuy} 
+                        disabled={buyLoading || !publicKey}
+                        className="bg-green-600 hover:bg-green-700 whitespace-nowrap"
+                      >
+                        {buyLoading ? "Buying..." : "Buy"}
+                      </Button>
+                    </div>
                   </div>
-                </div>
-              </Card>
+
+                  <div className="space-y-4 p-4 bg-red-500/5 rounded-lg border border-red-500/20">
+                    <h3 className="font-semibold flex items-center gap-2">
+                      <TrendingDown className="w-5 h-5 text-red-500" />
+                      Sell Tokens
+                    </h3>
+                    <div className="flex gap-2">
+                      <Input
+                        type="number"
+                        placeholder="Amount of tokens (e.g., 1000000)"
+                        value={sellAmount}
+                        onChange={(e) => setSellAmount(e.target.value)}
+                        step="100000"
+                        disabled={sellLoading}
+                      />
+                      <Button 
+                        onClick={handleSell}
+                        disabled={sellLoading || !publicKey}
+                        variant="destructive"
+                        className="whitespace-nowrap"
+                      >
+                        {sellLoading ? "Selling..." : "Sell"}
+                      </Button>
+                    </div>
+                  </div>
+                </Card>
+              </>
             )}
           </div>
 
