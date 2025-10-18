@@ -5,24 +5,23 @@ import { useConnection } from "@solana/wallet-adapter-react";
 import { PublicKey, SystemProgram } from "@solana/web3.js";
 import {
   TOKEN_PROGRAM_ID,
-  ASSOCIATED_TOKEN_PROGRAM_ID,
   getAssociatedTokenAddress,
 } from "@solana/spl-token";
 import { BN } from "@coral-xyz/anchor";
 
-interface BuyTokensParams {
+interface SellTokensParams {
   memePda: string;
-  solAmount: number; // Amount in SOL (e.g., 0.1)
+  tokenAmount: number;
 }
 
-export function useBuyTokens() {
+export function useSellTokens() {
   const program = useProgram();
   const { publicKey } = useWallet();
   const { connection } = useConnection();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const buyTokens = async (params: BuyTokensParams) => {
+  const sellTokens = async (params: SellTokensParams) => {
     if (!program || !publicKey) {
       throw new Error("Wallet not connected");
     }
@@ -34,7 +33,6 @@ export function useBuyTokens() {
       const memePda = new PublicKey(params.memePda);
       const memeData = await program.account.memeToken.fetch(memePda);
 
-      // Derive PDAs
       const [protocolPda] = PublicKey.findProgramAddressSync(
         [Buffer.from("protocol")],
         program.programId
@@ -50,35 +48,33 @@ export function useBuyTokens() {
         program.programId
       );
 
-      const buyerTokenAccount = await getAssociatedTokenAddress(
+      const sellerTokenAccount = await getAssociatedTokenAddress(
         mintPda,
         publicKey
       );
 
       const protocolData = await program.account.protocol.fetch(protocolPda);
 
-      // Convert SOL to lamports
-      const solAmountLamports = new BN(params.solAmount * 1e9);
-      const minTokensOut = new BN(0); // Accept any amount for now
-      const maxSlippageBps = 500; // 5% slippage
+      const tokenAmountRaw = new BN(params.tokenAmount * 1e9);
+      const minSolOut = new BN(0);
+      const maxSlippageBps = 500;
 
-      console.log("Buying tokens with", params.solAmount, "SOL");
+      console.log("Selling", params.tokenAmount, "tokens");
 
-     // Add small delay to ensure unique transactions
-await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise(resolve => setTimeout(resolve, 100));
+
       const tx = await program.methods
-        .buyTokens(solAmountLamports, minTokensOut, maxSlippageBps)
+        .sellTokens(tokenAmountRaw, minSolOut, maxSlippageBps)
         .accounts({
           protocol: protocolPda,
           meme: memePda,
           mint: mintPda,
-          buyerTokenAccount,
+          sellerTokenAccount,
           bondingCurveVault: vaultPda,
-          buyer: publicKey,
+          seller: publicKey,
           creator: memeData.creator,
           feeRecipient: protocolData.feeRecipient,
           tokenProgram: TOKEN_PROGRAM_ID,
-          associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
           systemProgram: SystemProgram.programId,
         })
         .rpc({
@@ -86,26 +82,27 @@ await new Promise(resolve => setTimeout(resolve, 100));
           commitment: "confirmed",
         });
 
-    console.log("Buy successful:", tx);
+      console.log("Sell successful:", tx);
+      
       try {
         await connection.confirmTransaction(tx, "confirmed");
       } catch (confirmError) {
-        // Ignore confirmation errors - transaction already succeeded
         console.log("Transaction succeeded but confirmation timed out");
       }
+      
       return tx;
-     } catch (err: any) {
-      const errorMessage = err?.message || "Buy failed";
+    } catch (err: any) {
+      const errorMessage = err?.message || "Sell failed";
       setError(errorMessage);
-      console.error("Buy error:", err);
-      throw err;
+      console.error("Sell error:", err);
+      return null;
     } finally {
       setLoading(false);
     }
   };
 
   return {
-    buyTokens,
+    sellTokens,
     loading,
     error,
   };

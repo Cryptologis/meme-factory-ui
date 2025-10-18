@@ -22,7 +22,7 @@ export default function CreateTokenForm({ onSuccess }: CreateTokenFormProps) {
   });
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [buyPercentage, setBuyPercentage] = useState(1); // Start at 1% NOT 5%
+  const [buyPercentage, setBuyPercentage] = useState(1); // Start at 1%
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -81,13 +81,13 @@ export default function CreateTokenForm({ onSuccess }: CreateTokenFormProps) {
       return;
     }
 
-    // HARD CAP at 2.4% to stay under 2.5% limit
-    const safeBuyPercentage = Math.min(buyPercentage, 2.4);
+    // HARD CAP at 2% to prevent whale manipulation
+    const safeBuyPercentage = Math.min(buyPercentage, 2);
     
-    if (buyPercentage > 2.4) {
+    if (buyPercentage > 2) {
       toast({
         title: "Warning",
-        description: `Buy percentage capped at 2.4% (you selected ${buyPercentage}%)`,
+        description: `Buy percentage capped at 2% (you selected ${buyPercentage}%)`,
       });
     }
 
@@ -101,11 +101,11 @@ export default function CreateTokenForm({ onSuccess }: CreateTokenFormProps) {
       // Safe calculation to avoid overflow
       const initialSupply = 1_000_000_000;
       
-      // Calculate buy amount - CAPPED at 2.4%
+      // Calculate buy amount - CAPPED at 2%
       const buyAmount = Math.floor((initialSupply / 100) * safeBuyPercentage);
       
       // Double-check cap
-      const maxAllowedBuy = Math.floor(initialSupply * 0.024);
+      const maxAllowedBuy = Math.floor(initialSupply * 0.02);
       const finalBuyAmount = Math.min(buyAmount, maxAllowedBuy);
       
       // Calculate cost using pump.fun bonding curve
@@ -152,7 +152,7 @@ export default function CreateTokenForm({ onSuccess }: CreateTokenFormProps) {
     }
   };
 
-  const calculatedTokens = Math.floor((formData.initialSupply / 100) * Math.min(buyPercentage, 2.4));
+  const calculatedTokens = Math.floor((formData.initialSupply / 100) * Math.min(buyPercentage, 2));
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -236,21 +236,21 @@ export default function CreateTokenForm({ onSuccess }: CreateTokenFormProps) {
 
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <Label>Buy {buyPercentage.toFixed(1)}% on launch (MAX 2.4%)</Label>
+          <Label>Buy {buyPercentage.toFixed(1)}% on launch (MAX 2%)</Label>
           <span className="text-sm text-muted-foreground">
             {calculatedTokens.toLocaleString()} tokens
           </span>
         </div>
         <Slider
           value={[buyPercentage]}
-          onValueChange={(value) => setBuyPercentage(Math.min(value[0], 2.4))}
+          onValueChange={(value) => setBuyPercentage(Math.min(value[0], 2))}
           min={0.5}
-          max={2.4}
+          max={2}
           step={0.1}
           className="w-full"
         />
         <p className="text-xs text-red-500 font-semibold">
-          ⚠️ Anti-bundle protection: Initial purchase HARD CAPPED at 2.4%
+          ⚠️ Anti-bundle protection: Initial purchase HARD CAPPED at 2%
         </p>
         <p className="text-xs text-muted-foreground">
           No limit after 15-minute cooldown period
@@ -275,4 +275,3 @@ export default function CreateTokenForm({ onSuccess }: CreateTokenFormProps) {
     </form>
   );
 }
-// Force rebuild

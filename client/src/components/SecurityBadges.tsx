@@ -18,7 +18,7 @@ export default function SecurityBadges({
     antiBundling: true,
     liquidityLocked: true,
     kycEnabled: false,
-    maxWalletPercent: 2.5,
+    maxWalletPercent: 2.0,
   },
 }: SecurityBadgesProps) {
   return (

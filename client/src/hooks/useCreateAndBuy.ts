@@ -13,7 +13,7 @@ interface CreateAndBuyParams {
   name: string;
   symbol: string;
   uri: string;
-  imageHash: number[]; // Array of 32 bytes
+  imageHash: number[];
   initialSupply: number;
   buyAmount: number;
   maxSolCost: number;
@@ -37,7 +37,7 @@ export function useCreateAndBuy() {
     setSignature(null);
 
     try {
-      // Derive PDAs according to your program's seeds
+      // Derive PDAs
       const [protocolPda] = PublicKey.findProgramAddressSync(
         [Buffer.from("protocol")],
         program.programId
@@ -67,25 +67,28 @@ export function useCreateAndBuy() {
         program.programId
       );
 
-      // Fetch protocol account to get fee recipient
+      // Fetch protocol account
       const protocolAccount = await program.account.protocol.fetch(protocolPda);
       const feeRecipient = protocolAccount.feeRecipient;
 
-      // Convert image hash to proper format (array of 32 numbers)
+      // Convert to proper format
       const imageHashArray = Array.isArray(params.imageHash)
         ? params.imageHash
         : Array.from(params.imageHash);
 
-      // Call the create_and_buy instruction
+      // Initial virtual reserves (matching your test scripts)
+      const initialVirtualSolReserves = new BN(30000000000); // 30 SOL
+      const initialVirtualTokenReserves = new BN(800000); // 800K tokens
+
+      // Call create_meme_token (note the snake_case!)
       const tx = await program.methods
-        .createAndBuy(
+        .createMemeToken(
           params.name,
           params.symbol,
           params.uri,
           imageHashArray,
-          new BN(params.initialSupply),
-          new BN(params.buyAmount),
-          new BN(params.maxSolCost)
+          initialVirtualSolReserves,
+          initialVirtualTokenReserves
         )
         .accounts({
           protocol: protocolPda,
@@ -107,7 +110,7 @@ export function useCreateAndBuy() {
     } catch (err: any) {
       const errorMessage = err?.message || "Transaction failed";
       setError(errorMessage);
-      console.error("Create and buy error:", err);
+      console.error("Create token error:", err);
       throw err;
     } finally {
       setLoading(false);

@@ -14,7 +14,7 @@ export default function FeatureHighlight() {
     {
       icon: Lock,
       title: "Anti-Bundling",
-      description: "2.5% max per wallet for 15 min prevents whale manipulation.",
+      description: "2.0% max per wallet for 15 min prevents whale manipulation.",
       badge: "Secure",
       color: "from-primary to-chart-2",
     },
