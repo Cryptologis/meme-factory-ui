@@ -1,165 +1,169 @@
-import { useState, useEffect } from "react";
-import { Wallet, TrendingUp, TrendingDown, RefreshCw } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { useProgram } from "@/hooks/useProgram";
 import { useWallet } from "@/hooks/useWallet";
+import { useEffect, useState } from "react";
+import { getAssociatedTokenAddress } from "@solana/spl-token";
 import { useConnection } from "@solana/wallet-adapter-react";
-import { PublicKey } from "@solana/web3.js";
-import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
-
-interface TokenHolding {
-  mint: string;
-  symbol: string;
-  balance: number;
-  decimals: number;
-  uiAmount: string;
-}
+import { Wallet, TrendingUp, Copy } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
 
 export default function Portfolio() {
+  const program = useProgram();
   const { publicKey } = useWallet();
   const { connection } = useConnection();
-  const [holdings, setHoldings] = useState<TokenHolding[]>([]);
+  const [tokens, setTokens] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
-  const [solBalance, setSolBalance] = useState(0);
 
-  const fetchHoldings = async () => {
-    if (!publicKey) return;
-    
+  useEffect(() => {
+    if (publicKey && program) {
+      loadPortfolio();
+    }
+  }, [publicKey, program]);
+
+  const loadPortfolio = async () => {
+    if (!publicKey || !program) return;
+
     setLoading(true);
     try {
-      // Get SOL balance
-      const balance = await connection.getBalance(publicKey);
-      setSolBalance(balance / 1e9); // Convert lamports to SOL
+      const allMemes = await program.account.memeToken.all();
+      const userTokens = [];
 
-      // Get all token accounts
-      const tokenAccounts = await connection.getParsedTokenAccountsByOwner(
-        publicKey,
-        { programId: TOKEN_PROGRAM_ID }
-      );
+      for (const meme of allMemes) {
+        try {
+          const ata = await getAssociatedTokenAddress(
+            meme.account.mint,
+            publicKey
+          );
 
-      const tokenHoldings: TokenHolding[] = tokenAccounts.value
-        .filter(account => {
-          const amount = account.account.data.parsed.info.tokenAmount.uiAmount;
-          return amount && amount > 0;
-        })
-        .map(account => {
-          const info = account.account.data.parsed.info;
-          return {
-            mint: info.mint,
-            symbol: info.mint.slice(0, 4) + "..." + info.mint.slice(-4), // Abbreviated
-            balance: info.tokenAmount.amount,
-            decimals: info.tokenAmount.decimals,
-            uiAmount: info.tokenAmount.uiAmountString,
-          };
-        });
+          const balance = await connection.getTokenAccountBalance(ata);
+          
+          if (balance.value.uiAmount && balance.value.uiAmount > 0) {
+            userTokens.push({
+              mint: meme.account.mint.toString(),
+              name: meme.account.name,
+              symbol: meme.account.symbol,
+              balance: balance.value.uiAmount,
+              pda: meme.publicKey.toString(),
+            });
+          }
+        } catch (e) {
+          console.log("No balance for token:", meme.account.symbol);
+        }
+      }
 
-      setHoldings(tokenHoldings);
+      setTokens(userTokens);
     } catch (error) {
-      console.error("Error fetching holdings:", error);
+      console.error("Error loading portfolio:", error);
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    if (publicKey) {
-      fetchHoldings();
-    }
-  }, [publicKey]);
+  const copyAddress = (address: string) => {
+    navigator.clipboard.writeText(address);
+    toast({
+      title: "Copied!",
+      description: "Token address copied to clipboard",
+    });
+  };
 
   if (!publicKey) {
     return (
       <Card className="p-6">
-        <div className="flex items-center gap-2 mb-4">
-          <Wallet className="w-5 h-5 text-primary" />
-          <h3 className="text-lg font-semibold">Your Portfolio</h3>
+        <div className="text-center py-8">
+          <Wallet className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+          <h3 className="text-lg font-semibold mb-2">Connect Your Wallet</h3>
+          <p className="text-sm text-muted-foreground">
+            Connect your wallet to view your token portfolio
+          </p>
         </div>
-        <p className="text-sm text-muted-foreground text-center py-8">
-          Connect your wallet to view your holdings
-        </p>
       </Card>
     );
   }
 
   return (
     <Card className="p-6">
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <Wallet className="w-5 h-5 text-primary" />
-          <h3 className="text-lg font-semibold">Your Portfolio</h3>
-        </div>
-        <Button 
-          variant="outline" 
-          size="sm"
-          onClick={fetchHoldings}
-          disabled={loading}
-          className="gap-2"
-        >
-          <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-          Refresh
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-xl font-bold flex items-center gap-2">
+          <Wallet className="w-5 h-5" />
+          Your Portfolio
+        </h2>
+        <Button size="sm" variant="outline" onClick={loadPortfolio} disabled={loading}>
+          {loading ? "Loading..." : "Refresh"}
         </Button>
       </div>
 
-      {/* SOL Balance */}
-      <div className="p-4 bg-gradient-to-br from-primary/10 to-chart-2/10 rounded-lg mb-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm text-muted-foreground">SOL Balance</p>
-            <p className="text-2xl font-bold font-mono">{solBalance.toFixed(4)} SOL</p>
-          </div>
-          <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center">
-            <Wallet className="w-6 h-6 text-primary" />
-          </div>
+      {loading && tokens.length === 0 ? (
+        <div className="text-center py-8 text-muted-foreground">
+          Loading your tokens...
         </div>
-      </div>
-
-      {/* Token Holdings */}
-      <div className="space-y-2">
-        <h4 className="text-sm font-semibold text-muted-foreground mb-2">
-          Token Holdings ({holdings.length})
-        </h4>
-        
-        {loading ? (
-          <div className="text-center py-8 text-sm text-muted-foreground">
-            Loading your holdings...
-          </div>
-        ) : holdings.length === 0 ? (
-          <div className="text-center py-8 text-sm text-muted-foreground">
-            No tokens found. Create or buy your first token!
-          </div>
-        ) : (
-          <div className="space-y-2 max-h-96 overflow-y-auto">
-            {holdings.map((holding, index) => (
-              <div
-                key={index}
-                className="p-3 bg-muted/50 rounded-lg hover:bg-muted/70 transition-colors"
-              >
-                <div className="flex items-center justify-between mb-1">
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-chart-2 flex items-center justify-center">
-                      <span className="text-white text-xs font-bold">
-                        {holding.symbol[0]}
-                      </span>
-                    </div>
-                    <div>
-                      <p className="font-medium font-mono text-sm">
-                        {holding.symbol}
-                      </p>
-                      <p className="text-xs text-muted-foreground font-mono">
-                        {holding.mint.slice(0, 8)}...
-                      </p>
-                    </div>
+      ) : tokens.length === 0 ? (
+        <div className="text-center py-8">
+          <TrendingUp className="w-12 h-12 mx-auto mb-4 text-muted-foreground opacity-50" />
+          <p className="text-sm text-muted-foreground">
+            You don't own any tokens yet.
+            <br />
+            Create or buy tokens to get started!
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {tokens.map((token) => (
+            <div
+              key={token.mint}
+              className="p-4 border rounded-lg hover:bg-accent/50 transition-colors"
+            >
+              <div className="flex items-start justify-between mb-3">
+                <div>
+                  <h3 className="font-semibold">{token.name}</h3>
+                  <p className="text-sm text-muted-foreground">{token.symbol}</p>
+                </div>
+                <div className="text-right">
+                  <div className="font-semibold">
+                    {token.balance.toLocaleString()}
                   </div>
-                  <div className="text-right">
-                    <p className="font-semibold font-mono">{holding.uiAmount}</p>
-                  </div>
+                  <div className="text-xs text-muted-foreground">tokens</div>
                 </div>
               </div>
-            ))}
-          </div>
-        )}
-      </div>
+
+              <div className="mb-3">
+                <div className="text-xs text-muted-foreground mb-1">Token CA:</div>
+                <div className="flex items-center gap-2">
+                  <code className="text-xs bg-muted px-2 py-1 rounded flex-1 overflow-hidden text-ellipsis">
+                    {token.mint}
+                  </code>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => copyAddress(token.mint)}
+                  >
+                    <Copy className="w-3 h-3" />
+                  </Button>
+                </div>
+              </div>
+
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => window.location.href = `/token/${token.mint}`}
+                >
+                  View Details
+                </Button>
+                <Button
+                  size="sm"
+                  className="flex-1"
+                  onClick={() => window.location.href = `/trade?token=${token.pda}`}
+                >
+                  Trade
+                </Button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </Card>
   );
 }
