@@ -11,7 +11,6 @@ import { useBuyTokens } from "@/hooks/useBuyTokens";
 import { useSellTokens } from "@/hooks/useSellTokens";
 import { PublicKey } from "@solana/web3.js";
 import { toast } from "@/hooks/use-toast";
-import { createChart, ColorType } from 'lightweight-charts';
 
 export default function TokenDetailPage() {
   const [match, params] = useRoute("/token/:mintAddress");
@@ -38,8 +37,7 @@ export default function TokenDetailPage() {
 
   useEffect(() => {
     if (chartContainerRef.current && token) {
-      const cleanup = initializeChart();
-      return cleanup;
+      initializeChart();
     }
   }, [token, timeframe]);
 
@@ -79,63 +77,85 @@ export default function TokenDetailPage() {
   const initializeChart = () => {
     if (!chartContainerRef.current) return;
 
-    const chart = createChart(chartContainerRef.current, {
-      layout: {
-        background: { type: ColorType.Solid, color: 'transparent' },
-        textColor: '#9CA3AF',
-      },
-      grid: {
-        vertLines: { color: '#1F2937' },
-        horzLines: { color: '#1F2937' },
-      },
-      width: chartContainerRef.current.clientWidth,
-      height: 400,
-      timeScale: {
-        borderColor: '#374151',
-      },
-      rightPriceScale: {
-        borderColor: '#374151',
-      },
-    });
-
-    const candlestickSeries = chart.addCandlestickSeries({
-      upColor: '#10B981',
-      downColor: '#EF4444',
-      borderVisible: false,
-      wickUpColor: '#10B981',
-      wickDownColor: '#EF4444',
-    });
-
-    const mockData = generateMockData();
-    candlestickSeries.setData(mockData);
-    chart.timeScale().fitContent();
-
-    return () => {
-      chart.remove();
-    };
-  };
-
-  const generateMockData = () => {
-    const data = [];
-    const basePrice = 0.00001;
-    let currentTime = Math.floor(Date.now() / 1000) - 86400;
-
-    for (let i = 0; i < 100; i++) {
-      const open = basePrice * (1 + (Math.random() - 0.5) * 0.1);
-      const close = open * (1 + (Math.random() - 0.5) * 0.1);
-      const high = Math.max(open, close) * (1 + Math.random() * 0.05);
-      const low = Math.min(open, close) * (1 - Math.random() * 0.05);
-
-      data.push({ time: currentTime, open, high, low, close });
-      currentTime += 900;
-    }
-
-    return data;
+    // Temporarily show placeholder instead of chart
+    chartContainerRef.current.innerHTML = `
+      <div style="display: flex; align-items: center; justify-content: center; height: 400px; background: #1f2937; border-radius: 8px; color: #9ca3af;">
+        <div style="text-align: center;">
+          <div style="font-size: 48px; margin-bottom: 16px;">📊</div>
+          <div style="font-size: 18px; font-weight: 600;">Price Chart</div>
+          <div style="font-size: 14px; margin-top: 8px;">Chart functionality coming soon</div>
+        </div>
+      </div>
+    `;
   };
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
     toast({ title: "Copied!", description: "Address copied to clipboard" });
+  };
+
+  const handleBuy = async () => {
+    if (!token || !buyAmount || !publicKey) {
+      toast({
+        title: "Error",
+        description: "Please enter amount and connect wallet",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      await buyTokens({
+        memePda: token.pda,
+        solAmount: parseFloat(buyAmount),
+      });
+
+      toast({
+        title: "Purchase Complete! 🎉",
+        description: `Bought tokens for ${buyAmount} SOL`,
+      });
+
+      setBuyAmount("");
+      loadTokenData(token.mint);
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to buy tokens",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleSell = async () => {
+    if (!token || !sellAmount || !publicKey) {
+      toast({
+        title: "Error",
+        description: "Please enter amount and connect wallet",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      await sellTokens({
+        memePda: token.pda,
+        tokenAmount: parseFloat(sellAmount),
+      });
+
+      toast({
+        title: "Sale Complete! 💰",
+        description: `Sold ${sellAmount} tokens`,
+      });
+
+      setSellAmount("");
+      loadTokenData(token.mint);
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to sell tokens",
+        variant: "destructive",
+      });
+    }
   };
 
   if (loading) {
@@ -258,7 +278,7 @@ export default function TokenDetailPage() {
                       <Button size="sm" variant="outline" onClick={() => setBuyAmount("1")}>1</Button>
                     </div>
                   </div>
-                  <Button className="w-full bg-green-600 hover:bg-green-700" size="lg" disabled={!publicKey || buyLoading}>
+                  <Button className="w-full bg-green-600 hover:bg-green-700" size="lg" disabled={!publicKey || buyLoading} onClick={handleBuy}>
                     {publicKey ? (buyLoading ? "Buying..." : "Buy") : "Connect Wallet"}
                   </Button>
                 </TabsContent>
@@ -267,7 +287,7 @@ export default function TokenDetailPage() {
                     <label className="text-sm text-muted-foreground mb-2 block">Amount (Tokens)</label>
                     <Input type="number" placeholder="0" value={sellAmount} onChange={(e) => setSellAmount(e.target.value)} step="1000" />
                   </div>
-                  <Button className="w-full" variant="destructive" size="lg" disabled={!publicKey || sellLoading}>
+                  <Button className="w-full" variant="destructive" size="lg" disabled={!publicKey || sellLoading} onClick={handleSell}>
                     {publicKey ? (sellLoading ? "Selling..." : "Sell") : "Connect Wallet"}
                   </Button>
                 </TabsContent>
