@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Search, TrendingUp, TrendingDown } from "lucide-react";
 import Portfolio from "@/components/Portfolio";
 import BondingCurveProgress from "@/components/BondingCurveProgress";
+import PriceChart from "@/components/PriceChart";
 import { useProgram } from "@/hooks/useProgram";
 import { useWallet } from "@/hooks/useWallet";
 import { useBuyTokens } from "@/hooks/useBuyTokens";
@@ -102,7 +103,6 @@ export default function TradePage() {
         solAmount: parseFloat(buyAmount),
       });
 
-      // Always show success - transaction went through
       toast({
         title: "Purchase Complete! 🎉",
         description: tx ? `Bought tokens for ${buyAmount} SOL` : "Tokens purchased successfully",
@@ -111,7 +111,6 @@ export default function TradePage() {
       setBuyAmount("");
       searchTokenByAddress(selectedToken.pda);
     } catch (error: any) {
-      // This shouldn't happen often, but handle gracefully
       toast({
         title: "Buy Completed",
         description: "Please refresh to see updated balance",
@@ -137,7 +136,6 @@ export default function TradePage() {
         tokenAmount: parseFloat(sellAmount),
       });
 
-      // Always show success - transaction went through
       toast({
         title: "Sale Complete! 💰",
         description: tx ? `Sold ${sellAmount} tokens` : "Tokens sold successfully",
@@ -146,7 +144,6 @@ export default function TradePage() {
       setSellAmount("");
       searchTokenByAddress(selectedToken.pda);
     } catch (error: any) {
-      // This shouldn't happen often, but handle gracefully
       toast({
         title: "Sell Completed",
         description: "Please refresh to see updated balance",
@@ -218,13 +215,14 @@ export default function TradePage() {
                   </div>
                 </Card>
 
-                {/* NEW: Bonding Curve Progress */}
                 <BondingCurveProgress
                   virtualSolReserves={selectedToken.virtualSolReserves}
                   virtualTokenReserves={selectedToken.virtualTokenReserves}
                   totalSupply={selectedToken.totalSupply}
                   targetSol={85}
                 />
+
+                <PriceChart tokenSymbol={selectedToken.symbol} />
 
                 <Card className="p-6">
                   <div className="space-y-4 mb-4 p-4 bg-green-500/5 rounded-lg border border-green-500/20">
