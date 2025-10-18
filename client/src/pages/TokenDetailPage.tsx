@@ -35,7 +35,7 @@ export default function TokenDetailPage() {
       hasLoadedRef.current = true;
       loadTokenData(mintAddress);
     }
-  }, [mintAddress]);
+  }, [mintAddress, program]);
 
   useEffect(() => {
     if (token && chartContainerRef.current && !chartContainerRef.current.innerHTML) {
@@ -44,7 +44,10 @@ export default function TokenDetailPage() {
   }, [token]);
 
   const loadTokenData = async (address: string) => {
-    if (!program) return;
+    if (!program) {
+      console.log("Program not ready yet");
+      return;
+    }
     
     setLoading(true);
     try {
