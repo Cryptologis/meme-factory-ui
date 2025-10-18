@@ -80,7 +80,17 @@ export function useCreateAndBuy() {
       const initialVirtualSolReserves = new BN(30000000000); // 30 SOL
       const initialVirtualTokenReserves = new BN(800000); // 800K tokens
 
-      // Call create_meme_token (note the snake_case!)
+      console.log("Creating token with params:", {
+        name: params.name,
+        symbol: params.symbol,
+        uri: params.uri,
+        buyAmount: params.buyAmount,
+      });
+
+      // Add small delay to ensure unique transactions
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      // Call create_meme_token
       const tx = await program.methods
         .createMemeToken(
           params.name,
@@ -103,7 +113,19 @@ export function useCreateAndBuy() {
           systemProgram: SystemProgram.programId,
           rent: SYSVAR_RENT_PUBKEY,
         })
-        .rpc();
+        .rpc({
+          skipPreflight: false,
+          commitment: "confirmed",
+        });
+
+      console.log("Token creation successful:", tx);
+      
+      // Don't throw errors from confirmation - transaction already succeeded
+      try {
+        await connection.confirmTransaction(tx, "confirmed");
+      } catch (confirmError) {
+        console.log("Transaction succeeded but confirmation timed out");
+      }
 
       setSignature(tx);
       return tx;
@@ -111,7 +133,8 @@ export function useCreateAndBuy() {
       const errorMessage = err?.message || "Transaction failed";
       setError(errorMessage);
       console.error("Create token error:", err);
-      throw err;
+      // DON'T re-throw the error - return null instead
+      return null;
     } finally {
       setLoading(false);
     }
