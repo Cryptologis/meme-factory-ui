@@ -41,7 +41,7 @@ export function useCreateAndBuy() {
       );
 
       const [memePda] = PublicKey.findProgramAddressSync(
-        [Buffer.from("meme"), publicKey.toBuffer(), Buffer.from(params.symbol)],
+        [Buffer.from("meme"), Buffer.from(params.symbol)],
         program.programId
       );
 

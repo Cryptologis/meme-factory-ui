@@ -57,11 +57,6 @@
               },
               {
                 "kind": "account",
-                "path": "meme.creator",
-                "account": "MemeToken"
-              },
-              {
-                "kind": "account",
                 "path": "meme.symbol",
                 "account": "MemeToken"
               }
@@ -289,10 +284,6 @@
                   109,
                   101
                 ]
-              },
-              {
-                "kind": "account",
-                "path": "creator"
               },
               {
                 "kind": "arg",
@@ -634,11 +625,6 @@
               },
               {
                 "kind": "account",
-                "path": "meme.creator",
-                "account": "MemeToken"
-              },
-              {
-                "kind": "account",
                 "path": "meme.symbol",
                 "account": "MemeToken"
               }
@@ -852,76 +838,96 @@
     },
     {
       "code": 6001,
+      "name": "NameTooShort",
+      "msg": "Name too short"
+    },
+    {
+      "code": 6002,
       "name": "SymbolTooLong",
       "msg": "Symbol too long"
     },
     {
-      "code": 6002,
+      "code": 6003,
+      "name": "SymbolTooShort",
+      "msg": "Symbol too short"
+    },
+    {
+      "code": 6004,
       "name": "UriTooLong",
       "msg": "URI too long"
     },
     {
-      "code": 6003,
+      "code": 6005,
       "name": "AlreadyGraduated",
       "msg": "Already graduated"
     },
     {
-      "code": 6004,
+      "code": 6006,
       "name": "NotGraduated",
       "msg": "Not graduated"
     },
     {
-      "code": 6005,
+      "code": 6007,
       "name": "AlreadyMigrated",
       "msg": "Already migrated"
     },
     {
-      "code": 6006,
+      "code": 6008,
       "name": "SlippageExceeded",
       "msg": "Slippage exceeded"
     },
     {
-      "code": 6007,
+      "code": 6009,
       "name": "DuplicateMeme",
       "msg": "Duplicate meme"
     },
     {
-      "code": 6008,
+      "code": 6010,
       "name": "InvalidReserves",
       "msg": "Invalid reserves"
     },
     {
-      "code": 6009,
+      "code": 6011,
       "name": "InvalidAmount",
       "msg": "Invalid amount"
     },
     {
-      "code": 6010,
+      "code": 6012,
       "name": "Overflow",
       "msg": "Overflow"
     },
     {
-      "code": 6011,
+      "code": 6013,
       "name": "FeeTooHigh",
       "msg": "Fee too high"
     },
     {
-      "code": 6012,
+      "code": 6014,
       "name": "SlippageTooHigh",
       "msg": "Slippage tolerance too high"
     },
     {
-      "code": 6013,
+      "code": 6015,
       "name": "MaxWalletExceeded",
-      "msg": "Max wallet limit exceeded (2% max)"
+      "msg": "Max wallet limit exceeded"
     },
     {
-      "code": 6014,
+      "code": 6016,
       "name": "TradeTooFast",
       "msg": "Trade too fast - wait 1 second"
     },
     {
-      "code": 6015,
+      "code": 6017,
+      "name": "LaunchCooldownActive",
+      "msg": "Launch cooldown active - wait 60 seconds after token creation"
+    },
+    {
+      "code": 6018,
+      "name": "InvalidImageHash",
+      "msg": "Invalid image hash"
+    },
+    {
+      "code": 6019,
       "name": "Unauthorized",
       "msg": "Unauthorized"
     }
