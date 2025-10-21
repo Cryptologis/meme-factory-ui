@@ -69,10 +69,11 @@ export function useCreateAndBuy() {
         ? params.imageHash
         : Array.from(params.imageHash);
 
-      // Initial virtual reserves matching backend expectations
-      // Testing with smaller values to avoid overflow
-      const initialVirtualSolReserves = new BN(30_000_000_000); // 30 SOL in lamports
-      const initialVirtualTokenReserves = new BN(1_073_000_000_000); // 1.073B base units = 1.073 tokens displayed
+      // Initial virtual reserves for bonding curve
+      // These values set the initial price: Price = SOL_reserves / Token_reserves
+      // With 30 SOL / 1073 tokens = ~0.028 SOL per token starting price
+      const initialVirtualSolReserves = new BN(30_000_000_000); // 30 SOL (30 * 10^9 lamports)
+      const initialVirtualTokenReserves = new BN(1_073_000_000_000); // 1,073 tokens (1073 * 10^9 base units)
 
       console.log("Creating token with params:", {
         name: params.name,
