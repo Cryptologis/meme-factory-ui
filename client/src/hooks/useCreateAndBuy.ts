@@ -14,9 +14,6 @@ interface CreateAndBuyParams {
   symbol: string;
   uri: string;
   imageHash: number[];
-  initialSupply: number;
-  buyAmount: number;
-  maxSolCost: number;
 }
 
 export function useCreateAndBuy() {
@@ -67,28 +64,22 @@ export function useCreateAndBuy() {
         program.programId
       );
 
-      // Fetch protocol account
-      const protocolAccount = await program.account.protocol.fetch(protocolPda);
-      const feeRecipient = protocolAccount.feeRecipient;
-
       // Convert to proper format
       const imageHashArray = Array.isArray(params.imageHash)
         ? params.imageHash
         : Array.from(params.imageHash);
 
-      // Initial virtual reserves (matching your test scripts)
-      const initialVirtualSolReserves = new BN(30000000000); // 30 SOL
-      const initialVirtualTokenReserves = new BN(800000); // 800K tokens
+      // Initial virtual reserves matching backend expectations
+      const initialVirtualSolReserves = new BN(30_000_000_000); // 30 SOL in lamports
+      const initialVirtualTokenReserves = new BN(800_000); // 800K tokens
 
       console.log("Creating token with params:", {
         name: params.name,
         symbol: params.symbol,
         uri: params.uri,
-        buyAmount: params.buyAmount,
+        initialVirtualSolReserves: initialVirtualSolReserves.toString(),
+        initialVirtualTokenReserves: initialVirtualTokenReserves.toString(),
       });
-
-      // Add small delay to ensure unique transactions
-      await new Promise(resolve => setTimeout(resolve, 100));
 
       // Call create_meme_token
       const tx = await program.methods
@@ -107,7 +98,6 @@ export function useCreateAndBuy() {
           creatorTokenAccount: creatorTokenAccount,
           bondingCurveVault: bondingCurveVault,
           creator: publicKey,
-          feeRecipient: feeRecipient,
           tokenProgram: TOKEN_PROGRAM_ID,
           associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
           systemProgram: SystemProgram.programId,
@@ -119,13 +109,9 @@ export function useCreateAndBuy() {
         });
 
       console.log("Token creation successful:", tx);
-      
-      // Don't throw errors from confirmation - transaction already succeeded
-      try {
-        await connection.confirmTransaction(tx, "confirmed");
-      } catch (confirmError) {
-        console.log("Transaction succeeded but confirmation timed out");
-      }
+
+      // Wait for confirmation
+      await connection.confirmTransaction(tx, "confirmed");
 
       setSignature(tx);
       return tx;
@@ -133,8 +119,7 @@ export function useCreateAndBuy() {
       const errorMessage = err?.message || "Transaction failed";
       setError(errorMessage);
       console.error("Create token error:", err);
-      // DON'T re-throw the error - return null instead
-      return null;
+      throw err;
     } finally {
       setLoading(false);
     }
