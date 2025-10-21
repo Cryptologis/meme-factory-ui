@@ -23,6 +23,9 @@ export default function BondingCurveProgress({
   // Initial virtual SOL reserves
   const initialSol = 30;
   
+  // Initial virtual token reserves
+  const initialVirtualTokenReserves = 1_073_000_000_000n;
+  
   // Calculate progress percentage (subtract initial reserves to start at 0%)
   const progressPercent = Math.max(0, Math.min(((currentSol - initialSol) / (targetSol - initialSol)) * 100, 100));
   
@@ -30,8 +33,8 @@ export default function BondingCurveProgress({
   const marketCap = currentSol * 2;
   
   // Calculate tokens sold
-  const tokensSold = totalTokens - tokensAvailable;
-  const tokensSoldPercent = (tokensSold / totalTokens) * 100;
+  const tokensSold = Math.max(0, Number(initialVirtualTokenReserves - virtualTokenReserves) / 1e9);
+  const tokensSoldPercent = totalTokens > 0 ? (tokensSold / totalTokens) * 100 : 0;
   
   // Price per token (in SOL)
   const pricePerToken = tokensAvailable > 0 ? currentSol / tokensAvailable : 0;
