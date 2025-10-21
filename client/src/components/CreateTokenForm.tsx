@@ -1,9 +1,7 @@
-// Clean rebuild - fix undefined error
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Slider } from "@/components/ui/slider";
 import { useToast } from "@/hooks/use-toast";
 import { useCreateAndBuy } from "@/hooks/useCreateAndBuy";
 import { Loader2, Upload, X } from "lucide-react";
@@ -18,17 +16,15 @@ export default function CreateTokenForm({ onSuccess }: CreateTokenFormProps) {
   const [formData, setFormData] = useState({
     name: "",
     symbol: "",
-    initialSupply: 1000,
   });
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [buyPercentage, setBuyPercentage] = useState(1); // Start at 1%
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: name === 'initialSupply' ? Number(value) : value
+      [name]: value
     }));
   };
 
@@ -71,7 +67,7 @@ export default function CreateTokenForm({ onSuccess }: CreateTokenFormProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.name || !formData.symbol || !imageFile) {
       toast({
         title: "Error",
@@ -81,16 +77,6 @@ export default function CreateTokenForm({ onSuccess }: CreateTokenFormProps) {
       return;
     }
 
-    // HARD CAP at 2% to prevent whale manipulation
-    const safeBuyPercentage = Math.min(buyPercentage, 2);
-    
-    if (buyPercentage > 2) {
-      toast({
-        title: "Warning",
-        description: `Buy percentage capped at 2% (you selected ${buyPercentage}%)`,
-      });
-    }
-
     try {
       const hashSource = `${imageFile.name}-${Date.now()}-${formData.symbol}-${Math.random()}`;
       const imageHash = simpleHash(hashSource);
@@ -98,68 +84,36 @@ export default function CreateTokenForm({ onSuccess }: CreateTokenFormProps) {
 
       console.log('Creating token with URI:', uri, 'length:', uri.length);
 
-      // Safe calculation to avoid overflow
-      const initialSupply = 1_000_000_000;
-      
-      // Calculate buy amount - CAPPED at 2%
-      const buyAmount = Math.floor((initialSupply / 100) * safeBuyPercentage);
-      
-      // Double-check cap
-      const maxAllowedBuy = Math.floor(initialSupply * 0.02);
-      const finalBuyAmount = Math.min(buyAmount, maxAllowedBuy);
-      
-      // Calculate cost using pump.fun bonding curve
-      const currentPrice = 1_000;
-      const avgPrice = currentPrice + (finalBuyAmount / 2);
-      const estimatedCost = finalBuyAmount * avgPrice;
-      const maxSolCost = Math.floor(estimatedCost * 2); 
-
-      console.log('Initial supply:', initialSupply);
-      console.log('Buy percentage:', safeBuyPercentage);
-      console.log('Buy amount:', finalBuyAmount);
-      console.log('Percentage of supply:', ((finalBuyAmount / initialSupply) * 100).toFixed(4) + '%');
-
       const txSignature = await createAndBuy({
         name: formData.name,
         symbol: formData.symbol,
         uri,
         imageHash,
-        initialSupply,
-        buyAmount: finalBuyAmount,
-        maxSolCost,
       });
 
       if (onSuccess && txSignature) {
         onSuccess(txSignature);
       }
 
-      // Always show success - transaction went through
       toast({
-        title: "Token Created! 🎉",
-        description: txSignature 
-          ? `Transaction: ${txSignature.slice(0, 8)}...` 
+        title: "Token Created!",
+        description: txSignature
+          ? `Transaction: ${txSignature.slice(0, 8)}...`
           : "Token launched successfully!",
       });
 
-      setFormData({ name: "", symbol: "", initialSupply: 1000 });
+      setFormData({ name: "", symbol: "" });
       setImageFile(null);
       setImagePreview(null);
-      setBuyPercentage(1);
     } catch (err: any) {
       console.error("Token creation error:", err);
-      // Transaction might have succeeded even with error
       toast({
-        title: "Token Launch Complete",
-        description: "Please check your wallet for the new token",
+        title: "Error",
+        description: err?.message || "Failed to create token",
+        variant: "destructive",
       });
-      setFormData({ name: "", symbol: "", initialSupply: 1000 });
-      setImageFile(null);
-      setImagePreview(null);
-      setBuyPercentage(1);
     }
   };
-
-  const calculatedTokens = Math.floor((formData.initialSupply / 100) * Math.min(buyPercentage, 2));
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -227,41 +181,13 @@ export default function CreateTokenForm({ onSuccess }: CreateTokenFormProps) {
         )}
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="initialSupply">Initial Supply (millions)</Label>
-        <Input
-          id="initialSupply"
-          name="initialSupply"
-          type="number"
-          placeholder="1000"
-          value={formData.initialSupply}
-          onChange={handleInputChange}
-          min={1}
-          required
-        />
-      </div>
-
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <Label>Buy {buyPercentage.toFixed(1)}% on launch (MAX 2%)</Label>
-          <span className="text-sm text-muted-foreground">
-            {calculatedTokens.toLocaleString()} tokens
-          </span>
-        </div>
-        <Slider
-          value={[buyPercentage]}
-          onValueChange={(value) => setBuyPercentage(Math.min(value[0], 2))}
-          min={0.5}
-          max={2}
-          step={0.1}
-          className="w-full"
-        />
-        <p className="text-xs text-red-500 font-semibold">
-          ⚠️ Anti-bundle protection: Initial purchase HARD CAPPED at 2%
-        </p>
-        <p className="text-xs text-muted-foreground">
-          No limit after 15-minute cooldown period
-        </p>
+      <div className="space-y-2 p-4 bg-muted/50 rounded-lg">
+        <p className="text-sm font-medium">Token Details</p>
+        <ul className="text-xs text-muted-foreground space-y-1">
+          <li>• Fixed supply: 1,000,000,000 tokens</li>
+          <li>• Initial virtual reserves: 30 SOL / 800K tokens</li>
+          <li>• Bonding curve pricing model</li>
+        </ul>
       </div>
 
       <Button
