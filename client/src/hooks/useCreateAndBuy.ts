@@ -70,9 +70,9 @@ export function useCreateAndBuy() {
         : Array.from(params.imageHash);
 
       // Initial virtual reserves matching backend expectations
-      // Tokens have 9 decimals, so we need to multiply by 10^9
-      const initialVirtualSolReserves = new BN(30_000_000_000); // 30 SOL in lamports (30 * 10^9)
-      const initialVirtualTokenReserves = new BN(800_000_000_000_000); // 800K tokens with decimals (800,000 * 10^9)
+      // Testing with smaller values to avoid overflow
+      const initialVirtualSolReserves = new BN(30_000_000_000); // 30 SOL in lamports
+      const initialVirtualTokenReserves = new BN(1_073_000_000_000); // 1.073B base units = 1.073 tokens displayed
 
       console.log("Creating token with params:", {
         name: params.name,
