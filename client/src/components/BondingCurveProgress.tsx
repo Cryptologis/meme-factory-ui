@@ -20,8 +20,11 @@ export default function BondingCurveProgress({
   const tokensAvailable = Number(virtualTokenReserves) / 1e9;
   const totalTokens = Number(totalSupply) / 1e9;
   
-  // Calculate progress percentage
-  const progressPercent = Math.min((currentSol / targetSol) * 100, 100);
+  // Initial virtual SOL reserves
+  const initialSol = 30;
+  
+  // Calculate progress percentage (subtract initial reserves to start at 0%)
+  const progressPercent = Math.max(0, Math.min(((currentSol - initialSol) / (targetSol - initialSol)) * 100, 100));
   
   // Calculate market cap (current SOL * 2 for full supply value)
   const marketCap = currentSol * 2;
@@ -59,10 +62,10 @@ export default function BondingCurveProgress({
         <div className="space-y-2">
           <Progress value={progressPercent} className="h-4" />
           <div className="flex justify-between text-xs text-muted-foreground">
-            <span>{currentSol.toFixed(2)} SOL</span>
+            <span>{(currentSol - initialSol).toFixed(2)} SOL raised</span>
             <span className="flex items-center gap-1">
               <Target className="w-3 h-3" />
-              Target: {targetSol} SOL
+              Target: {(targetSol - initialSol).toFixed(0)} SOL
             </span>
           </div>
         </div>
@@ -77,8 +80,8 @@ export default function BondingCurveProgress({
 
           <div className="p-3 bg-muted/50 rounded-lg">
             <div className="text-xs text-muted-foreground mb-1">Price</div>
-            <div className="text-lg font-bold">${(pricePerToken * 150 * 1e9).toFixed(6)}</div>
-            <div className="text-xs text-muted-foreground">{(pricePerToken * 1e9).toFixed(9)} SOL</div>
+            <div className="text-lg font-bold">${(pricePerToken * 150).toFixed(6)}</div>
+            <div className="text-xs text-muted-foreground">{pricePerToken.toFixed(6)} SOL</div>
           </div>
 
           <div className="p-3 bg-muted/50 rounded-lg">
