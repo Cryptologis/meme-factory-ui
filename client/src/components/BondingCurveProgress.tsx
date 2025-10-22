@@ -20,21 +20,15 @@ export default function BondingCurveProgress({
   const tokensAvailable = Number(virtualTokenReserves) / 1e9;
   const totalTokens = Number(totalSupply) / 1e9;
   
-  // Initial virtual SOL reserves
-  const initialSol = 30;
-  
-  // Initial virtual token reserves
-  const initialVirtualTokenReserves = 1_073_000_000_000n;
-  
-  // Calculate progress percentage (subtract initial reserves to start at 0%)
-  const progressPercent = Math.max(0, Math.min(((currentSol - initialSol) / (targetSol - initialSol)) * 100, 100));
+  // Calculate progress percentage
+  const progressPercent = Math.min((currentSol / targetSol) * 100, 100);
   
   // Calculate market cap (current SOL * 2 for full supply value)
   const marketCap = currentSol * 2;
   
   // Calculate tokens sold
-  const tokensSold = Math.max(0, Number(initialVirtualTokenReserves - virtualTokenReserves) / 1e9);
-  const tokensSoldPercent = totalTokens > 0 ? (tokensSold / totalTokens) * 100 : 0;
+  const tokensSold = totalTokens - tokensAvailable;
+  const tokensSoldPercent = (tokensSold / totalTokens) * 100;
   
   // Price per token (in SOL)
   const pricePerToken = tokensAvailable > 0 ? currentSol / tokensAvailable : 0;
@@ -65,10 +59,10 @@ export default function BondingCurveProgress({
         <div className="space-y-2">
           <Progress value={progressPercent} className="h-4" />
           <div className="flex justify-between text-xs text-muted-foreground">
-            <span>{(currentSol - initialSol).toFixed(2)} SOL raised</span>
+            <span>{currentSol.toFixed(2)} SOL</span>
             <span className="flex items-center gap-1">
               <Target className="w-3 h-3" />
-              Target: {(targetSol - initialSol).toFixed(0)} SOL
+              Target: {targetSol} SOL
             </span>
           </div>
         </div>
@@ -83,8 +77,8 @@ export default function BondingCurveProgress({
 
           <div className="p-3 bg-muted/50 rounded-lg">
             <div className="text-xs text-muted-foreground mb-1">Price</div>
-            <div className="text-lg font-bold">${(pricePerToken * 150).toFixed(6)}</div>
-            <div className="text-xs text-muted-foreground">{pricePerToken.toFixed(6)} SOL</div>
+            <div className="text-lg font-bold">${(pricePerToken * 150 * 1e9).toFixed(6)}</div>
+            <div className="text-xs text-muted-foreground">{(pricePerToken * 1e9).toFixed(9)} SOL</div>
           </div>
 
           <div className="p-3 bg-muted/50 rounded-lg">
