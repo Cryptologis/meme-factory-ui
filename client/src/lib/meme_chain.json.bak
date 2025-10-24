@@ -57,6 +57,11 @@
               },
               {
                 "kind": "account",
+                "path": "meme.creator",
+                "account": "MemeToken"
+              },
+              {
+                "kind": "account",
                 "path": "meme.symbol",
                 "account": "MemeToken"
               }
@@ -284,6 +289,10 @@
                   109,
                   101
                 ]
+              },
+              {
+                "kind": "account",
+                "path": "creator"
               },
               {
                 "kind": "arg",
@@ -519,8 +528,7 @@
           "signer": true
         },
         {
-          "name": "fee_recipient",
-          "address": "your_fee_recipient_pubkey_here"
+          "name": "fee_recipient"
         },
         {
           "name": "system_program",
@@ -623,6 +631,11 @@
                   109,
                   101
                 ]
+              },
+              {
+                "kind": "account",
+                "path": "meme.creator",
+                "account": "MemeToken"
               },
               {
                 "kind": "account",
@@ -815,12 +828,7 @@
         10,
         110,
         48
-      ],
-      "type": {
-        "defined": {
-          "name": "MemeToken"
-        }
-      }
+      ]
     },
     {
       "name": "Protocol",
@@ -833,12 +841,7 @@
         72,
         131,
         40
-      ],
-      "type": {
-        "defined": {
-          "name": "Protocol"
-        }
-      }
+      ]
     }
   ],
   "errors": [
@@ -849,96 +852,76 @@
     },
     {
       "code": 6001,
-      "name": "NameTooShort",
-      "msg": "Name too short"
-    },
-    {
-      "code": 6002,
       "name": "SymbolTooLong",
       "msg": "Symbol too long"
     },
     {
-      "code": 6003,
-      "name": "SymbolTooShort",
-      "msg": "Symbol too short"
-    },
-    {
-      "code": 6004,
+      "code": 6002,
       "name": "UriTooLong",
       "msg": "URI too long"
     },
     {
-      "code": 6005,
+      "code": 6003,
       "name": "AlreadyGraduated",
       "msg": "Already graduated"
     },
     {
-      "code": 6006,
+      "code": 6004,
       "name": "NotGraduated",
       "msg": "Not graduated"
     },
     {
-      "code": 6007,
+      "code": 6005,
       "name": "AlreadyMigrated",
       "msg": "Already migrated"
     },
     {
-      "code": 6008,
+      "code": 6006,
       "name": "SlippageExceeded",
       "msg": "Slippage exceeded"
     },
     {
-      "code": 6009,
+      "code": 6007,
       "name": "DuplicateMeme",
       "msg": "Duplicate meme"
     },
     {
-      "code": 6010,
+      "code": 6008,
       "name": "InvalidReserves",
       "msg": "Invalid reserves"
     },
     {
-      "code": 6011,
+      "code": 6009,
       "name": "InvalidAmount",
       "msg": "Invalid amount"
     },
     {
-      "code": 6012,
+      "code": 6010,
       "name": "Overflow",
       "msg": "Overflow"
     },
     {
-      "code": 6013,
+      "code": 6011,
       "name": "FeeTooHigh",
       "msg": "Fee too high"
     },
     {
-      "code": 6014,
+      "code": 6012,
       "name": "SlippageTooHigh",
       "msg": "Slippage tolerance too high"
     },
     {
-      "code": 6015,
+      "code": 6013,
       "name": "MaxWalletExceeded",
-      "msg": "Max wallet limit exceeded"
+      "msg": "Max wallet limit exceeded (2% max)"
     },
     {
-      "code": 6016,
+      "code": 6014,
       "name": "TradeTooFast",
       "msg": "Trade too fast - wait 1 second"
     },
     {
-      "code": 6017,
-      "name": "LaunchCooldownActive",
-      "msg": "Launch cooldown active - wait 60 seconds after token creation"
-    },
-    {
-      "code": 6018,
-      "name": "InvalidImageHash",
-      "msg": "Invalid image hash"
-    },
-    {
-      "code": 6019,
+      "code": 6015,
       "name": "Unauthorized",
       "msg": "Unauthorized"
     }
@@ -1009,6 +992,32 @@
             "type": "u64"
           },
           {
+            "name": "is_graduated",
+            "type": "bool"
+          },
+          {
+            "name": "amm_migrated",
+            "type": "bool"
+          },
+          {
+            "name": "amm_type",
+            "type": {
+              "option": {
+                "defined": {
+                  "name": "AmmType"
+                }
+              }
+            }
+          },
+          {
+            "name": "total_volume",
+            "type": "u64"
+          },
+          {
+            "name": "holders_count",
+            "type": "u32"
+          },
+          {
             "name": "virtual_sol_reserves",
             "type": "u64"
           },
@@ -1025,26 +1034,28 @@
             "type": "u64"
           },
           {
-            "name": "graduation_threshold",
+            "name": "creator_allocation",
             "type": "u64"
           },
           {
-            "name": "is_graduated",
-            "type": "bool"
+            "name": "creator_fee_bps",
+            "type": "u16"
           },
           {
-            "name": "is_migrated",
-            "type": "bool"
+            "name": "creator_fees_earned",
+            "type": "u64"
           },
           {
-            "name": "amm_type",
-            "type": {
-              "option": {
-                "defined": {
-                  "name": "AmmType"
-                }
-              }
-            }
+            "name": "last_trade_timestamp",
+            "type": "i64"
+          },
+          {
+            "name": "trade_count",
+            "type": "u64"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
           }
         ]
       }
@@ -1075,8 +1086,16 @@
             "type": "u64"
           },
           {
-            "name": "total_tokens_created",
+            "name": "total_memes_created",
             "type": "u64"
+          },
+          {
+            "name": "total_volume",
+            "type": "u64"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
           }
         ]
       }

@@ -2,10 +2,7 @@ import { PublicKey } from "@solana/web3.js";
 import { Idl } from "@coral-xyz/anchor";
 import MemeChainIDL from "./meme_chain.json";
 
-// ===== UPDATED: Program ID from your Rust program =====
-// This should match the declare_id! in your lib.rs file
-// BEFORE: "5mE8RwFEnMJ1Rs4bLM2VSrzMN8RSEJkf1vXb9VpAybvi"
-// AFTER:  "FgKLBQuE6Ksctz4gjFk1BjiBCcUqmnYFy7986ecuNqLS"
+// Actual deployed Program ID on devnet
 export const PROGRAM_ID = new PublicKey(
   "FgKLBQuE6Ksctz4gjFk1BjiBCcUqmnYFy7986ecuNqLS"
 );
