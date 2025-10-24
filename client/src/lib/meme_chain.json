@@ -519,7 +519,8 @@
           "signer": true
         },
         {
-          "name": "fee_recipient"
+          "name": "fee_recipient",
+          "address": "your_fee_recipient_pubkey_here"
         },
         {
           "name": "system_program",
@@ -574,6 +575,38 @@
           }
         }
       ]
+    },
+    {
+      "name": "renounce_mint_authority",
+      "discriminator": [
+        123,
+        45,
+        67,
+        89,
+        101,
+        112,
+        134,
+        156
+      ],
+      "accounts": [
+        {
+          "name": "token",
+          "writable": true
+        },
+        {
+          "name": "mint",
+          "writable": true
+        },
+        {
+          "name": "creator",
+          "signer": true
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        }
+      ],
+      "args": []
     },
     {
       "name": "sell_tokens",
@@ -814,7 +847,12 @@
         10,
         110,
         48
-      ]
+      ],
+      "type": {
+        "defined": {
+          "name": "MemeToken"
+        }
+      }
     },
     {
       "name": "Protocol",
@@ -827,7 +865,12 @@
         72,
         131,
         40
-      ]
+      ],
+      "type": {
+        "defined": {
+          "name": "Protocol"
+        }
+      }
     }
   ],
   "errors": [
@@ -998,32 +1041,6 @@
             "type": "u64"
           },
           {
-            "name": "is_graduated",
-            "type": "bool"
-          },
-          {
-            "name": "amm_migrated",
-            "type": "bool"
-          },
-          {
-            "name": "amm_type",
-            "type": {
-              "option": {
-                "defined": {
-                  "name": "AmmType"
-                }
-              }
-            }
-          },
-          {
-            "name": "total_volume",
-            "type": "u64"
-          },
-          {
-            "name": "holders_count",
-            "type": "u32"
-          },
-          {
             "name": "virtual_sol_reserves",
             "type": "u64"
           },
@@ -1040,28 +1057,26 @@
             "type": "u64"
           },
           {
-            "name": "creator_allocation",
+            "name": "graduation_threshold",
             "type": "u64"
           },
           {
-            "name": "creator_fee_bps",
-            "type": "u16"
+            "name": "is_graduated",
+            "type": "bool"
           },
           {
-            "name": "creator_fees_earned",
-            "type": "u64"
+            "name": "is_migrated",
+            "type": "bool"
           },
           {
-            "name": "last_trade_timestamp",
-            "type": "i64"
-          },
-          {
-            "name": "trade_count",
-            "type": "u64"
-          },
-          {
-            "name": "bump",
-            "type": "u8"
+            "name": "amm_type",
+            "type": {
+              "option": {
+                "defined": {
+                  "name": "AmmType"
+                }
+              }
+            }
           }
         ]
       }
@@ -1092,16 +1107,8 @@
             "type": "u64"
           },
           {
-            "name": "total_memes_created",
+            "name": "total_tokens_created",
             "type": "u64"
-          },
-          {
-            "name": "total_volume",
-            "type": "u64"
-          },
-          {
-            "name": "bump",
-            "type": "u8"
           }
         ]
       }
