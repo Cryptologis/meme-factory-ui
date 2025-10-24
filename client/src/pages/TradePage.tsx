@@ -211,7 +211,7 @@ export default function TradePage() {
                     <div className="p-3 bg-muted/50 rounded-lg">
                       <p className="text-muted-foreground mb-1">Virtual Tokens</p>
                       <p className="font-mono font-semibold">
-                        {(Number(selectedToken.virtualTokenReserves.toString()) / 1e12).toFixed(0)}K
+                        {(Number(selectedToken.virtualTokenReserves.toString()) / 1e6).toFixed(0)}K
                       </p>
                     </div>
                   </div>

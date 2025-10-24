@@ -55,7 +55,7 @@ export function useSellTokens() {
 
       const protocolData = await program.account.protocol.fetch(protocolPda);
 
-      const tokenAmountRaw = new BN(params.tokenAmount * 1e9);
+      const tokenAmountRaw = new BN(params.tokenAmount * 1e6);
       const minSolOut = new BN(0);
       const maxSlippageBps = 500;
 
