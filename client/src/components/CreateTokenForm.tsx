@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { useToast } from "@/hooks/use-toast";
 import { useCreateAndBuy } from "@/hooks/useCreateAndBuy";
+import { VIRTUAL_SOL_RESERVES, VIRTUAL_TOKEN_RESERVES, TOKEN_MULTIPLIER } from "@/lib/constants";
 import { Loader2, Upload, X } from "lucide-react";
 
 interface CreateTokenFormProps {
@@ -18,7 +19,6 @@ export default function CreateTokenForm({ onSuccess }: CreateTokenFormProps) {
   const [formData, setFormData] = useState({
     name: "",
     symbol: "",
-    initialSupply: 1000,
   });
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -28,7 +28,7 @@ export default function CreateTokenForm({ onSuccess }: CreateTokenFormProps) {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: name === 'initialSupply' ? Number(value) : value
+      [name]: value
     }));
   };
 
@@ -98,39 +98,37 @@ export default function CreateTokenForm({ onSuccess }: CreateTokenFormProps) {
 
       console.log('Creating token with URI:', uri, 'length:', uri.length);
 
-      // ===== UPDATED: 6 decimals instead of 9 =====
-      const initialSupply = formData.initialSupply * 1_000_000; // 6 decimals (was correct)
-      
-      // Calculate buy amount - CAPPED at 2.4%
-      const buyAmount = Math.floor((initialSupply / 100) * safeBuyPercentage);
+      // Calculate buy amount based on virtual token reserves
+      const virtualTokens = Number(VIRTUAL_TOKEN_RESERVES) / TOKEN_MULTIPLIER;
+      const buyAmount = Math.floor((virtualTokens / 100) * safeBuyPercentage);
       
       // Double-check cap
-      const maxAllowedBuy = Math.floor(initialSupply * 0.024);
+      const maxAllowedBuy = Math.floor(virtualTokens * 0.024);
       const finalBuyAmount = Math.min(buyAmount, maxAllowedBuy);
       
-      // ===== UPDATED: Calculate cost using pump.fun bonding curve with 6 DECIMALS =====
-      const VIRTUAL_SOL_RESERVES = 30_000_000_000; // 30 SOL in lamports (9 decimals)
-      const VIRTUAL_TOKEN_RESERVES = 1_073_000_000_000_000; // FIXED: 1.073B tokens with 6 decimals
-      const k = VIRTUAL_SOL_RESERVES * VIRTUAL_TOKEN_RESERVES;
-      const currentTokenReserve = VIRTUAL_TOKEN_RESERVES;
-      const newTokenReserve = currentTokenReserve - finalBuyAmount;
+      // Calculate cost using pump.fun bonding curve with 9 DECIMALS
+      const VIRTUAL_SOL_RESERVES_BI = 30_000_000_000n; // 30 SOL in lamports
+      const VIRTUAL_TOKEN_RESERVES_BI = 1_073_000_000_000_000_000n; // 1.073B tokens with 9 decimals
+      const k = VIRTUAL_SOL_RESERVES_BI * VIRTUAL_TOKEN_RESERVES_BI;
+      const currentTokenReserve = VIRTUAL_TOKEN_RESERVES_BI;
+      const newTokenReserve = currentTokenReserve - BigInt(finalBuyAmount);
       const newSolReserve = k / newTokenReserve;
       const currentSolReserve = k / currentTokenReserve;
-      const estimatedCost = Math.floor(newSolReserve - currentSolReserve);
+      const estimatedCost = Number(newSolReserve - currentSolReserve);
       const maxSolCost = Math.floor(estimatedCost * 1.5);
 
-      console.log('Initial supply:', initialSupply);
+      console.log('Virtual tokens:', virtualTokens);
       console.log('Buy percentage:', safeBuyPercentage);
       console.log('Buy amount:', finalBuyAmount);
-      console.log('Percentage of supply:', ((finalBuyAmount / initialSupply) * 100).toFixed(4) + '%');
+      console.log('Percentage of virtual supply:', ((finalBuyAmount / virtualTokens) * 100).toFixed(4) + '%');
 
       const txSignature = await createAndBuy({
         name: formData.name,
         symbol: formData.symbol,
         uri,
         imageHash,
-        initialSupply,
         buyAmount: finalBuyAmount,
+        estimatedCost,
         maxSolCost,
       });
 
@@ -143,7 +141,7 @@ export default function CreateTokenForm({ onSuccess }: CreateTokenFormProps) {
         description: `Token created! TX: ${txSignature.slice(0, 8)}...`,
       });
 
-      setFormData({ name: "", symbol: "", initialSupply: 1000 });
+      setFormData({ name: "", symbol: "" });
       setImageFile(null);
       setImagePreview(null);
       setBuyPercentage(1);
@@ -157,7 +155,8 @@ export default function CreateTokenForm({ onSuccess }: CreateTokenFormProps) {
     }
   };
 
-  const calculatedTokens = Math.floor((formData.initialSupply / 100) * Math.min(buyPercentage, 2.4));
+  const virtualTokens = Number(VIRTUAL_TOKEN_RESERVES) / TOKEN_MULTIPLIER;
+  const calculatedTokens = Math.floor((virtualTokens / 100) * Math.min(buyPercentage, 2.4));
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -225,23 +224,6 @@ export default function CreateTokenForm({ onSuccess }: CreateTokenFormProps) {
         )}
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="initialSupply">Initial Supply (millions)</Label>
-        <Input
-          id="initialSupply"
-          name="initialSupply"
-          type="number"
-          placeholder="1000"
-          value={formData.initialSupply}
-          onChange={handleInputChange}
-          min={1}
-          required
-        />
-        <p className="text-xs text-muted-foreground">
-          Total supply will be {formData.initialSupply} million tokens
-        </p>
-      </div>
-
       <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
         <div className="flex items-center justify-between">
           <Label>Initial Buy Percentage</Label>
@@ -258,7 +240,7 @@ export default function CreateTokenForm({ onSuccess }: CreateTokenFormProps) {
           className="w-full"
         />
         <div className="space-y-1 text-xs text-muted-foreground">
-          <p>• You'll receive: ~{calculatedTokens.toFixed(2)}M tokens</p>
+          <p>• You'll receive: ~{calculatedTokens.toLocaleString()} tokens</p>
           <p>• Maximum allowed: 2.4% during launch period</p>
           <p>• Any amount above 2.4% will be automatically capped</p>
         </div>
