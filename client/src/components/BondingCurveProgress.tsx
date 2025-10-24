@@ -130,3 +130,4 @@ export default function BondingCurveProgress({
     </Card>
   );
 }
+// Force update Fri Oct 24 13:45:03 MST 2025
