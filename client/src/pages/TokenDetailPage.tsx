@@ -175,9 +175,10 @@ export default function TokenDetailPage() {
     return <div className="min-h-screen flex items-center justify-center">Token not found</div>;
   }
 
-  const currentSol = Number(token.virtualSolReserves) / 1e9;
-  const tokensAvailable = Number(token.virtualTokenReserves) / 1e6;
-  const totalTokens = Number(token.totalSupply) / 1e6;
+  // ===== FIXED: Changed from 1e9 to 1e6 for 6 decimals =====
+  const currentSol = Number(token.virtualSolReserves) / 1e9; // SOL still has 9 decimals
+  const tokensAvailable = Number(token.virtualTokenReserves) / 1e6; // FIXED: 6 decimals
+  const totalTokens = Number(token.totalSupply) / 1e6; // FIXED: 6 decimals
   const marketCap = currentSol * 2;
   const pricePerToken = tokensAvailable > 0 ? currentSol / tokensAvailable : 0;
   const progressPercent = Math.min((currentSol / 85) * 100, 100);
@@ -202,7 +203,7 @@ export default function TokenDetailPage() {
                         <Copy className="w-3 h-3" />
                       </Button>
                       <Button size="sm" variant="ghost" asChild>
-                        <a href={`https://solscan.io/token/${token.mint}?cluster=devnet`} target="_blank" rel="noreferrer">
+                        <a href={`https://explorer.solana.com/address/${token.mint}?cluster=devnet`} target="_blank" rel="noopener noreferrer">
                           <ExternalLink className="w-3 h-3" />
                         </a>
                       </Button>
@@ -210,55 +211,67 @@ export default function TokenDetailPage() {
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="text-3xl font-bold">${(marketCap * 150).toFixed(0)}</div>
-                  <div className="text-sm text-muted-foreground">Market Cap</div>
-                  <div className="text-sm text-green-500 mt-1">+12.5% 24h</div>
-                </div>
-              </div>
-            </Card>
-
-            <Card className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <div className="text-2xl font-bold">${(pricePerToken * 150 * 1e9).toFixed(6)}</div>
-                  <div className="text-sm text-muted-foreground">Price (USD)</div>
-                </div>
-                <div className="flex gap-2">
-                  {['1H', '4H', '1D', '1W'].map((tf) => (
-                    <Button key={tf} size="sm" variant={timeframe === tf ? "default" : "outline"} onClick={() => setTimeframe(tf)}>
-                      {tf}
-                    </Button>
-                  ))}
-                </div>
-              </div>
-              <div ref={chartContainerRef} className="w-full" />
-            </Card>
-
-            <Card className="p-6">
-              <Tabs defaultValue="trades">
-                <TabsList>
-                  <TabsTrigger value="trades">Recent Trades</TabsTrigger>
-                  <TabsTrigger value="holders">Top Holders</TabsTrigger>
-                  <TabsTrigger value="info">Info</TabsTrigger>
-                </TabsList>
-                <TabsContent value="trades" className="space-y-2 mt-4">
-                  <div className="text-sm text-muted-foreground text-center py-8">
-                    No recent trades. Be the first!
+                  <div className="text-3xl font-bold">${(pricePerToken * 150).toFixed(6)}</div>
+                  <div className="text-sm text-muted-foreground">{pricePerToken.toFixed(9)} SOL</div>
+                  <div className="flex items-center gap-1 mt-2 text-green-600">
+                    <TrendingUp className="w-4 h-4" />
+                    <span className="text-sm">+12.5%</span>
                   </div>
-                </TabsContent>
-                <TabsContent value="holders" className="mt-4">
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
+                </div>
+              </div>
+            </Card>
+
+            <div ref={chartContainerRef} />
+
+            <Card className="p-6">
+              <Tabs defaultValue="info">
+                <TabsList className="mb-4">
+                  <TabsTrigger value="info">Token Info</TabsTrigger>
+                  <TabsTrigger value="stats">Statistics</TabsTrigger>
+                </TabsList>
+                <TabsContent value="info" className="space-y-3">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <span className="text-muted-foreground">Contract</span>
+                      <div className="flex items-center gap-2 mt-1">
+                        <code className="text-sm">{token.mint.slice(0, 12)}...</code>
+                        <Button size="sm" variant="ghost" onClick={() => copyToClipboard(token.mint)}>
+                          <Copy className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    </div>
+                    <div>
                       <span className="text-muted-foreground">Creator</span>
-                      <span className="font-mono">{(100 - (tokensAvailable / totalTokens * 100)).toFixed(2)}%</span>
+                      <div className="flex items-center gap-2 mt-1">
+                        <code className="text-sm">{token.creator.slice(0, 12)}...</code>
+                        <Button size="sm" variant="ghost" onClick={() => copyToClipboard(token.creator)}>
+                          <Copy className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Total Supply</span>
+                      <span className="font-semibold block mt-1">{(totalTokens / 1e6).toFixed(2)}M</span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Circulating</span>
+                      <span className="font-semibold block mt-1">{((totalTokens - tokensAvailable) / 1e6).toFixed(2)}M</span>
                     </div>
                   </div>
                 </TabsContent>
-                <TabsContent value="info" className="mt-4">
-                  <div className="space-y-3 text-sm">
+                <TabsContent value="stats">
+                  <div className="space-y-3">
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Total Supply</span>
-                      <span className="font-semibold">{(totalTokens / 1e6).toFixed(0)}M</span>
+                      <span className="text-muted-foreground">Market Cap</span>
+                      <span className="font-semibold">${(marketCap * 150).toFixed(0)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Liquidity</span>
+                      <span className="font-semibold">{currentSol.toFixed(2)} SOL</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Available</span>
+                      <span className="font-semibold">{(tokensAvailable / 1e6).toFixed(2)}M</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Circulating</span>
@@ -338,7 +351,7 @@ export default function TokenDetailPage() {
               <div className="space-y-3 text-sm">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Price</span>
-                  <span className="font-semibold">${(pricePerToken * 150 * 1e9).toFixed(6)}</span>
+                  <span className="font-semibold">${(pricePerToken * 150).toFixed(9)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">24h Volume</span>
