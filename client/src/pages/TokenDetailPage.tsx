@@ -176,8 +176,8 @@ export default function TokenDetailPage() {
   }
 
   const currentSol = Number(token.virtualSolReserves) / 1e9;
-  const tokensAvailable = Number(token.virtualTokenReserves) / 1e9;
-  const totalTokens = Number(token.totalSupply) / 1e9;
+  const tokensAvailable = Number(token.virtualTokenReserves) / 1e6;
+  const totalTokens = Number(token.totalSupply) / 1e6;
   const marketCap = currentSol * 2;
   const pricePerToken = tokensAvailable > 0 ? currentSol / tokensAvailable : 0;
   const progressPercent = Math.min((currentSol / 85) * 100, 100);
