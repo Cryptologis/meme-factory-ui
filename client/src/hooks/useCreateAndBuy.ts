@@ -8,12 +8,15 @@ import {
   ASSOCIATED_TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
 import { BN } from "@coral-xyz/anchor";
+import { VIRTUAL_SOL_RESERVES, VIRTUAL_TOKEN_RESERVES, TOKEN_MULTIPLIER } from "@/lib/constants"; // Added for anti-sniping precision
 
 interface CreateAndBuyParams {
   name: string;
   symbol: string;
   uri: string;
   imageHash: number[];
+  buyAmount?: number; // Added for buy logic
+  buyPercentage?: number; // Added for buy percentage
 }
 
 export function useCreateAndBuy() {
@@ -69,11 +72,10 @@ export function useCreateAndBuy() {
         ? params.imageHash
         : Array.from(params.imageHash);
 
-      // Initial virtual reserves for bonding curve
-      // These values set the initial price: Price = SOL_reserves / Token_reserves
-      // With 30 SOL / 1073 tokens = ~0.028 SOL per token starting price
-      const initialVirtualSolReserves = new BN(30_000_000_000); // 30 SOL (30 * 10^9 lamports)
-      const initialVirtualTokenReserves = new BN(1_073_000_000_000); // 1,073 tokens (1073 * 10^9 base units)
+      // Initial virtual reserves for bonding curve (updated to 6 decimals)
+      // Anti-Sniping: Use constants for precision with BN.js
+      const initialVirtualSolReserves = new BN(VIRTUAL_SOL_RESERVES.toString()); // 30 SOL in lamports (9 decimals)
+      const initialVirtualTokenReserves = new BN(VIRTUAL_TOKEN_RESERVES.toString()); // 1.073B tokens with 6 decimals
 
       console.log("Creating token with params:", {
         name: params.name,
@@ -112,6 +114,47 @@ export function useCreateAndBuy() {
 
       console.log("Token creation successful:", tx);
 
+      // Anti-Sniping: If buy amount is specified, call buy_tokens
+      if (params.buyAmount && params.buyAmount > 0) {
+        const buyPercentage = params.buyPercentage || 1;
+        const virtualTokens = Number(VIRTUAL_TOKEN_RESERVES) / TOKEN_MULTIPLIER;
+        const finalBuyAmount = Math.min(params.buyAmount, Math.floor(virtualTokens * buyPercentage / 100));
+
+        // Calculate cost using bonding curve
+        const k = VIRTUAL_SOL_RESERVES * VIRTUAL_TOKEN_RESERVES;
+        const newTokenReserve = VIRTUAL_TOKEN_RESERVES - BigInt(finalBuyAmount);
+        const newSolReserve = k / newTokenReserve;
+        const estimatedCost = Number(newSolReserve - VIRTUAL_SOL_RESERVES);
+
+        // Call buy_tokens
+        const buyTx = await program.methods
+          .buyTokens(
+            new BN(estimatedCost), // sol_amount
+            new BN(finalBuyAmount * TOKEN_MULTIPLIER), // min_tokens_out
+            new BN(5000) // max_slippage_bps
+          )
+          .accounts({
+            protocol: protocolPda,
+            meme: memePda,
+            mint: mintPda,
+            buyerTokenAccount: creatorTokenAccount, // Assuming creator buys
+            bondingCurveVault: bondingCurveVault,
+            buyer: publicKey,
+            creator: publicKey,
+            feeRecipient: publicKey, // Placeholder
+            tokenProgram: TOKEN_PROGRAM_ID,
+            systemProgram: SystemProgram.programId,
+            instructionSysvar: SYSVAR_RENT_PUBKEY, // Placeholder for priority fee
+          })
+          .rpc({
+            skipPreflight: false,
+            commitment: "confirmed",
+          });
+
+        console.log("Buy successful:", buyTx);
+        await connection.confirmTransaction(buyTx, "confirmed");
+      }
+
       // Wait for confirmation
       await connection.confirmTransaction(tx, "confirmed");
 
@@ -134,4 +177,4 @@ export function useCreateAndBuy() {
     signature,
   };
 }
-// Force rebuild: Tue Oct 21 15:44:39 MST 2025
+// Updated for anti-sniping and 6 decimals: Fri Oct 25 00:10:55 UTC 2025

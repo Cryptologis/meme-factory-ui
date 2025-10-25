@@ -1,5 +1,8 @@
-// Clean rebuild - fix undefined error
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useWallet } from "@solana/wallet-adapter-react";
+import { useConnection } from "@solana/wallet-adapter-react";
+import { PublicKey } from "@solana/web3.js";
+import BN from "bn.js";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,8 +17,11 @@ interface CreateTokenFormProps {
 }
 
 export default function CreateTokenForm({ onSuccess }: CreateTokenFormProps) {
+  const { publicKey } = useWallet();
+  const { connection } = useConnection();
   const { toast } = useToast();
   const { createAndBuy, loading } = useCreateAndBuy();
+
   const [formData, setFormData] = useState({
     name: "",
     symbol: "",
@@ -23,6 +29,54 @@ export default function CreateTokenForm({ onSuccess }: CreateTokenFormProps) {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [buyPercentage, setBuyPercentage] = useState(1); // Start at 1% NOT 5%
+
+  // Anti-Sniping: Wallet verification and metadata reveal
+  const [isVerified, setIsVerified] = useState(false);
+  const [metadataRevealed, setMetadataRevealed] = useState(false);
+  const programId = new PublicKey("FgKLBQuE6Ksctz4gjFk1BjiBCcUqmnYFy7986ecuNqLS"); // Update with your program ID
+
+  const verifyWallet = async () => {
+    if (!publicKey) return;
+    try {
+      // Mock verification: Check if wallet has sufficient stake (integrate with real KYC/stake service)
+      const stakeAmount = await connection.getStakeActivation(publicKey);
+      if (stakeAmount > new BN(1_000_000_000)) { // 1 SOL stake
+        setIsVerified(true);
+        toast({
+          title: "Verified",
+          description: "Wallet verified for high-priority transactions",
+        });
+      } else {
+        toast({
+          title: "Unverified",
+          description: "Insufficient stake for verification. Please stake more SOL.",
+          variant: "destructive",
+        });
+      }
+    } catch (err) {
+      toast({
+        title: "Error",
+        description: "Verification failed. Try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Subscribe to on-chain events for metadata reveal delay
+  useEffect(() => {
+    if (!programId) return;
+    const subscription = connection.onProgramAccountChange(programId, (accountInfo) => {
+      try {
+        const memeData = { reveal_time: Date.now() / 1000 + 10 }; // Mock: Replace with actual account decode
+        if (Date.now() / 1000 >= memeData.reveal_time) {
+          setMetadataRevealed(true);
+        }
+      } catch (err) {
+        console.error("Error decoding account:", err);
+      }
+    });
+    return () => connection.removeProgramAccountChangeListener(subscription);
+  }, [programId, connection]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -81,6 +135,15 @@ export default function CreateTokenForm({ onSuccess }: CreateTokenFormProps) {
       return;
     }
 
+    if (!isVerified) {
+      toast({
+        title: "Error",
+        description: "Verify your wallet for high-priority transactions",
+        variant: "destructive",
+      });
+      return;
+    }
+
     // HARD CAP at 2.4% to stay under 2.5% limit
     const safeBuyPercentage = Math.min(buyPercentage, 2.4);
     
@@ -106,9 +169,9 @@ export default function CreateTokenForm({ onSuccess }: CreateTokenFormProps) {
       const maxAllowedBuy = Math.floor(virtualTokens * 0.024);
       const finalBuyAmount = Math.min(buyAmount, maxAllowedBuy);
       
-      // Calculate cost using pump.fun bonding curve with 9 DECIMALS
-      const VIRTUAL_SOL_RESERVES_BI = 30_000_000_000n; // 30 SOL in lamports
-      const VIRTUAL_TOKEN_RESERVES_BI = 1_073_000_000_000_000_000n; // 1.073B tokens with 9 decimals
+      // Calculate cost using pump.fun bonding curve with 6 DECIMALS
+      const VIRTUAL_SOL_RESERVES_BI = VIRTUAL_SOL_RESERVES; // 30 SOL in lamports
+      const VIRTUAL_TOKEN_RESERVES_BI = VIRTUAL_TOKEN_RESERVES; // 1.073B tokens with 6 decimals
       const k = VIRTUAL_SOL_RESERVES_BI * VIRTUAL_TOKEN_RESERVES_BI;
       const currentTokenReserve = VIRTUAL_TOKEN_RESERVES_BI;
       const newTokenReserve = currentTokenReserve - BigInt(finalBuyAmount);
@@ -130,6 +193,7 @@ export default function CreateTokenForm({ onSuccess }: CreateTokenFormProps) {
         buyAmount: finalBuyAmount,
         estimatedCost,
         maxSolCost,
+        buyPercentage: safeBuyPercentage,
       });
 
       if (onSuccess && txSignature) {
@@ -147,11 +211,26 @@ export default function CreateTokenForm({ onSuccess }: CreateTokenFormProps) {
       setBuyPercentage(1);
     } catch (err: any) {
       console.error("Token creation error:", err);
-      toast({
-        title: "Error",
-        description: err?.message || "Failed to create token",
-        variant: "destructive",
-      });
+      // Anti-Sniping: Handle specific errors
+      if (err.message.includes('UnverifiedWallet')) {
+        toast({
+          title: "Error",
+          description: "Wallet not verified for high-priority transaction.",
+          variant: "destructive",
+        });
+      } else if (err.message.includes('LargeBuyDetected')) {
+        toast({
+          title: "Error",
+          description: "Large buy detected. Wallet may be frozen.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: err?.message || "Failed to create token",
+          variant: "destructive",
+        });
+      }
     }
   };
 
@@ -159,66 +238,74 @@ export default function CreateTokenForm({ onSuccess }: CreateTokenFormProps) {
   const calculatedTokens = Math.floor((virtualTokens / 100) * Math.min(buyPercentage, 2.4));
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="space-y-2">
-        <Label htmlFor="name">Token Name</Label>
-        <Input
-          id="name"
-          name="name"
-          placeholder="Doge Killer"
-          value={formData.name}
-          onChange={handleInputChange}
-          required
-        />
+    <div className="max-w-md mx-auto">
+      <div className="mb-4">
+        <Button onClick={verifyWallet} disabled={!publicKey} className="w-full">
+          Verify Wallet for Bundling
+        </Button>
+        {isVerified && <p className="text-green-600 text-sm mt-1">Verified!</p>}
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="symbol">Token Symbol</Label>
-        <Input
-          id="symbol"
-          name="symbol"
-          placeholder="DGKILLER"
-          value={formData.symbol}
-          onChange={handleInputChange}
-          maxLength={10}
-          required
-        />
-      </div>
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="space-y-2">
+          <Label htmlFor="name">Token Name</Label>
+          <Input
+            id="name"
+            name="name"
+            placeholder="Doge Killer"
+            value={formData.name}
+            onChange={handleInputChange}
+            required
+          />
+        </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="image">Token Image</Label>
-        {!imagePreview ? (
-          <div className="border-2 border-dashed rounded-lg p-8 text-center hover:border-primary/50 transition-colors cursor-pointer">
-            <input
-              type="file"
-              id="image"
-              accept="image/*"
-              onChange={handleImageSelect}
-              className="hidden"
-            />
-            <label htmlFor="image" className="cursor-pointer block">
-              <Upload className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-              <p className="text-sm text-muted-foreground">
-                Click to upload image (max 5MB)
-              </p>
-              <p className="text-xs text-muted-foreground mt-1">
-                PNG, JPG, GIF supported
-              </p>
-            </label>
-          </div>
-        ) : (
-          <div className="relative border rounded-lg overflow-hidden">
-            <img
-              src={imagePreview}
-              alt="Token preview"
-              className="w-full h-48 object-cover"
-            />
-            <button
-              type="button"
-              onClick={removeImage}
-              className="absolute top-2 right-2 p-1 bg-black/50 hover:bg-black/70 rounded-full"
-            >
-              <X className="w-4 h-4 text-white" />
+        <div className="space-y-2">
+          <Label htmlFor="symbol">Token Symbol</Label>
+          <Input
+            id="symbol"
+            name="symbol"
+            placeholder="DGKILLER"
+            value={formData.symbol}
+            onChange={handleInputChange}
+            maxLength={10}
+            required
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="image">Token Image</Label>
+          {!imagePreview ? (
+            <div className="border-2 border-dashed rounded-lg p-8 text-center hover:border-primary/50 transition-colors cursor-pointer">
+              <input
+                type="file"
+                id="image"
+                accept="image/*"
+                onChange={handleImageSelect}
+                className="hidden"
+              />
+              <label htmlFor="image" className="cursor-pointer block">
+                <Upload className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+                <p className="text-sm text-muted-foreground">
+                  Click to upload image (max 5MB)
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  PNG, JPG, GIF supported
+                </p>
+              </label>
+            </div>
+          ) : (
+            <div className="relative border rounded-lg overflow-hidden">
+              <img
+                src={imagePreview}
+                alt="Token preview"
+                className="w-full h-48 object-cover"
+              />
+              <button
+                type="button"
+                onClick={removeImage}
+                className="absolute top-2 right-2 p-1 bg-black/50 hover:bg-black/70 rounded-full"
+              >
+                <X className="w-4 h-4 text-white" />
             </button>
           </div>
         )}
@@ -246,10 +333,17 @@ export default function CreateTokenForm({ onSuccess }: CreateTokenFormProps) {
         </div>
       </div>
 
+      {/* Anti-Sniping: Metadata reveal display */}
+      {metadataRevealed && (
+        <div className="p-4 bg-green-50 rounded-lg">
+          <p className="text-sm">Token metadata revealed: {formData.name} ({formData.symbol})</p>
+        </div>
+      )}
+
       <Button
         type="submit"
         className="w-full"
-        disabled={loading || !formData.name || !formData.symbol || !imageFile}
+        disabled={loading || !formData.name || !formData.symbol || !imageFile || !isVerified}
       >
         {loading ? (
           <>
@@ -261,5 +355,6 @@ export default function CreateTokenForm({ onSuccess }: CreateTokenFormProps) {
         )}
       </Button>
     </form>
+    </div>
   );
 }
