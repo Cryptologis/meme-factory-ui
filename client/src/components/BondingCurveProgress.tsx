@@ -2,6 +2,7 @@ import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { TrendingUp, Target, Zap } from "lucide-react";
 import { BN } from "@coral-xyz/anchor";
+import { VIRTUAL_SOL_RESERVES, VIRTUAL_TOKEN_RESERVES, GRADUATION_THRESHOLD } from "@/lib/constants";
 
 interface BondingCurveProgressProps {
   virtualSolReserves: any; // BN or BigInt
@@ -14,18 +15,16 @@ export default function BondingCurveProgress({
   virtualSolReserves,
   virtualTokenReserves,
   totalSupply,
-  targetSol = 85,
+  targetSol = Number(GRADUATION_THRESHOLD.toString()) / 1e9,
 }: BondingCurveProgressProps) {
   // ===== UPDATED: Changed from 1e9 to 1e6 for 6 decimals =====
   const currentSol = Number(virtualSolReserves.toString()) / 1e9; // SOL still has 9 decimals
   const tokensAvailable = Number(virtualTokenReserves.toString()) / 1e6; // CHANGED: Tokens now have 6 decimals
   const totalTokens = Number(totalSupply.toString()) / 1e6; // CHANGED: Tokens now have 6 decimals
   
-  // Initial virtual SOL reserves
-  const initialSol = 30;
-  
-  // ===== UPDATED: Initial virtual token reserves for 6 decimals =====
-  const initialVirtualTokenReserves = new BN(1_073_000_000_000_000); // 1.073B tokens with 6 decimals
+  // ===== UPDATED: Use constants for initial reserves =====
+  const initialSol = Number(VIRTUAL_SOL_RESERVES.toString()) / 1e9;
+  const initialVirtualTokenReserves = new BN(VIRTUAL_TOKEN_RESERVES.toString());
   
   // Calculate progress percentage (subtract initial reserves to start at 0%)
   const progressPercent = Math.max(0, Math.min(((currentSol - initialSol) / (targetSol - initialSol)) * 100, 100));
@@ -130,4 +129,4 @@ export default function BondingCurveProgress({
     </Card>
   );
 }
-// Force update Fri Oct 24 13:45:03 MST 2025
+// Updated to use constants for consistency: Sat Oct 26 01:21:31 UTC 2025
