@@ -66,10 +66,10 @@ export default function BondingCurveProgress({
         <div className="space-y-2">
           <Progress value={progressPercent} className="h-4" />
           <div className="flex justify-between text-xs text-muted-foreground">
-            <span>{(currentSol - initialSol).toFixed(2)} SOL raised</span>
+            <span>{currentSol.toFixed(2)} SOL collected</span>
             <span className="flex items-center gap-1">
               <Target className="w-3 h-3" />
-              Target: {(targetSol - initialSol).toFixed(0)} SOL
+              Target: {targetSol.toFixed(0)} SOL
             </span>
           </div>
         </div>
@@ -129,4 +129,4 @@ export default function BondingCurveProgress({
     </Card>
   );
 }
-// Updated to use constants for consistency: Sat Oct 26 01:21:31 UTC 2025
+// Updated to display total collected SOL and full target: Sat Oct 26 01:35:30 UTC 2025
