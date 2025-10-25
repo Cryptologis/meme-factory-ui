@@ -1,8 +1,4 @@
-import { useState, useEffect } from "react";
-import { useWallet } from "@solana/wallet-adapter-react";
-import { useConnection } from "@solana/wallet-adapter-react";
-import { PublicKey } from "@solana/web3.js";
-import BN from "bn.js";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,8 +13,6 @@ interface CreateTokenFormProps {
 }
 
 export default function CreateTokenForm({ onSuccess }: CreateTokenFormProps) {
-  const { publicKey } = useWallet();
-  const { connection } = useConnection();
   const { toast } = useToast();
   const { createAndBuy, loading } = useCreateAndBuy();
 
@@ -29,54 +23,6 @@ export default function CreateTokenForm({ onSuccess }: CreateTokenFormProps) {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [buyPercentage, setBuyPercentage] = useState(1); // Start at 1% NOT 5%
-
-  // Anti-Sniping: Wallet verification and metadata reveal
-  const [isVerified, setIsVerified] = useState(false);
-  const [metadataRevealed, setMetadataRevealed] = useState(false);
-  const programId = new PublicKey("FgKLBQuE6Ksctz4gjFk1BjiBCcUqmnYFy7986ecuNqLS"); // Update with your program ID
-
-  const verifyWallet = async () => {
-    if (!publicKey) return;
-    try {
-      // Mock verification: Check if wallet has sufficient stake (integrate with real KYC/stake service)
-      const stakeAmount = await connection.getStakeActivation(publicKey);
-      if (stakeAmount > new BN(1_000_000_000)) { // 1 SOL stake
-        setIsVerified(true);
-        toast({
-          title: "Verified",
-          description: "Wallet verified for high-priority transactions",
-        });
-      } else {
-        toast({
-          title: "Unverified",
-          description: "Insufficient stake for verification. Please stake more SOL.",
-          variant: "destructive",
-        });
-      }
-    } catch (err) {
-      toast({
-        title: "Error",
-        description: "Verification failed. Try again.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  // Subscribe to on-chain events for metadata reveal delay
-  useEffect(() => {
-    if (!programId) return;
-    const subscription = connection.onProgramAccountChange(programId, (accountInfo) => {
-      try {
-        const memeData = { reveal_time: Date.now() / 1000 + 10 }; // Mock: Replace with actual account decode
-        if (Date.now() / 1000 >= memeData.reveal_time) {
-          setMetadataRevealed(true);
-        }
-      } catch (err) {
-        console.error("Error decoding account:", err);
-      }
-    });
-    return () => connection.removeProgramAccountChangeListener(subscription);
-  }, [programId, connection]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -130,15 +76,6 @@ export default function CreateTokenForm({ onSuccess }: CreateTokenFormProps) {
       toast({
         title: "Error",
         description: "Please fill in all fields and upload an image",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (!isVerified) {
-      toast({
-        title: "Error",
-        description: "Verify your wallet for high-priority transactions",
         variant: "destructive",
       });
       return;
@@ -211,14 +148,8 @@ export default function CreateTokenForm({ onSuccess }: CreateTokenFormProps) {
       setBuyPercentage(1);
     } catch (err: any) {
       console.error("Token creation error:", err);
-      // Anti-Sniping: Handle specific errors
-      if (err.message.includes('UnverifiedWallet')) {
-        toast({
-          title: "Error",
-          description: "Wallet not verified for high-priority transaction.",
-          variant: "destructive",
-        });
-      } else if (err.message.includes('LargeBuyDetected')) {
+      // Handle specific errors
+      if (err.message.includes('LargeBuyDetected')) {
         toast({
           title: "Error",
           description: "Large buy detected. Wallet may be frozen.",
@@ -239,13 +170,6 @@ export default function CreateTokenForm({ onSuccess }: CreateTokenFormProps) {
 
   return (
     <div className="max-w-md mx-auto">
-      <div className="mb-4">
-        <Button onClick={verifyWallet} disabled={!publicKey} className="w-full">
-          Verify Wallet for Bundling
-        </Button>
-        {isVerified && <p className="text-green-600 text-sm mt-1">Verified!</p>}
-      </div>
-
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="space-y-2">
           <Label htmlFor="name">Token Name</Label>
@@ -333,17 +257,10 @@ export default function CreateTokenForm({ onSuccess }: CreateTokenFormProps) {
         </div>
       </div>
 
-      {/* Anti-Sniping: Metadata reveal display */}
-      {metadataRevealed && (
-        <div className="p-4 bg-green-50 rounded-lg">
-          <p className="text-sm">Token metadata revealed: {formData.name} ({formData.symbol})</p>
-        </div>
-      )}
-
       <Button
         type="submit"
         className="w-full"
-        disabled={loading || !formData.name || !formData.symbol || !imageFile || !isVerified}
+        disabled={loading || !formData.name || !formData.symbol || !imageFile}
       >
         {loading ? (
           <>
