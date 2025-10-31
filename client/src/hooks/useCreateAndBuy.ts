@@ -137,14 +137,14 @@ export function useCreateAndBuy() {
             protocol: protocolPda,
             meme: memePda,
             mint: mintPda,
-            buyerTokenAccount: creatorTokenAccount, // Assuming creator buys
+            buyerTokenAccount: creatorTokenAccount,
             bondingCurveVault: bondingCurveVault,
             buyer: publicKey,
             creator: publicKey,
-            feeRecipient: protocolPda, // Use protocol PDA as fee recipient
+            feeRecipient: protocolPda,
             tokenProgram: TOKEN_PROGRAM_ID,
+            associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
             systemProgram: SystemProgram.programId,
-            // Note: instructionSysvar removed as it's not needed for standard transactions
           })
           .rpc({
             skipPreflight: false,
