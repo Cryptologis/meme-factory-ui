@@ -44,7 +44,7 @@ export function useCreateAndBuy() {
       );
 
       const [memePda] = PublicKey.findProgramAddressSync(
-        [Buffer.from("meme"), Buffer.from(params.symbol)],
+        [Buffer.from("meme"), publicKey.toBuffer(), Buffer.from(params.symbol)],
         program.programId
       );
 
@@ -155,10 +155,7 @@ export function useCreateAndBuy() {
         await connection.confirmTransaction(buyTx, "confirmed");
       }
 
-      // Wait for confirmation
-      await connection.confirmTransaction(tx, "confirmed");
-
-      setSignature(tx);
+            setSignature(tx);
       return tx;
     } catch (err: any) {
       const errorMessage = err?.message || "Transaction failed";
