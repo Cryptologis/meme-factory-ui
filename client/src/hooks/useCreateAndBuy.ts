@@ -141,10 +141,10 @@ export function useCreateAndBuy() {
             bondingCurveVault: bondingCurveVault,
             buyer: publicKey,
             creator: publicKey,
-            feeRecipient: publicKey, // Placeholder
+            feeRecipient: protocolPda, // Use protocol PDA as fee recipient
             tokenProgram: TOKEN_PROGRAM_ID,
             systemProgram: SystemProgram.programId,
-            instructionSysvar: SYSVAR_RENT_PUBKEY, // Placeholder for priority fee
+            // Note: instructionSysvar removed as it's not needed for standard transactions
           })
           .rpc({
             skipPreflight: false,
@@ -152,7 +152,6 @@ export function useCreateAndBuy() {
           });
 
         console.log("Buy successful:", buyTx);
-        await connection.confirmTransaction(buyTx, "confirmed");
       }
 
             setSignature(tx);
