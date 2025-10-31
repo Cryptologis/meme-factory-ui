@@ -2,7 +2,7 @@ import { PublicKey } from '@solana/web3.js';
 
 // ===== UPDATED: Program ID from your redeployed Rust program =====
 // Make sure this matches your newly deployed program with 6 decimals!
-export const PROGRAM_ID = new PublicKey('FgKLBQuE6Ksctz4gjFk1BjiBCcUqmnYFy7986ecuNqLS');
+export const PROGRAM_ID = new PublicKey('CRJDPpTp3aayKYZCaLEYntnpP3xvwbeTDYMdu18RtHwh');
 
 // Using the Triton One RPC for devnet
 export const DEVNET_ENDPOINT = 'https://pit129.nodes.rpcpool.com';
