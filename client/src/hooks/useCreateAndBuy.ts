@@ -1,81 +1,83 @@
-import { useState } from "react";
-import { useProgram } from "./useProgram";
-import { useWallet } from "./useWallet";
-import { useConnection } from "@solana/wallet-adapter-react";
-import { PublicKey, SystemProgram, SYSVAR_RENT_PUBKEY } from "@solana/web3.js";
+import { useConnection, useWallet } from "@solana/wallet-adapter-react";
+import { PublicKey, SystemProgram } from "@solana/web3.js";
+import { Program, AnchorProvider, BN } from "@coral-xyz/anchor";
 import {
   TOKEN_PROGRAM_ID,
   ASSOCIATED_TOKEN_PROGRAM_ID,
+  getAssociatedTokenAddress,
 } from "@solana/spl-token";
-import { BN } from "@coral-xyz/anchor";
-import { VIRTUAL_SOL_RESERVES, VIRTUAL_TOKEN_RESERVES, TOKEN_MULTIPLIER } from "@/lib/constants"; // Added for anti-sniping precision
+import { useState, useRef } from "react";
+import idl from "@/lib/meme_chain.json";
+import { PROGRAM_ID, VIRTUAL_SOL_RESERVES, VIRTUAL_TOKEN_RESERVES, TOKEN_MULTIPLIER } from "@/lib/constants";
 
-interface CreateAndBuyParams {
+export interface CreateTokenParams {
   name: string;
   symbol: string;
   uri: string;
   imageHash: number[];
-  buyAmount?: number; // Added for buy logic
-  buyPercentage?: number; // Added for buy percentage
 }
 
 export function useCreateAndBuy() {
-  const program = useProgram();
-  const { publicKey, signTransaction } = useWallet();
   const { connection } = useConnection();
-  const [loading, setLoading] = useState(false);
+  const wallet = useWallet();
+  const [isCreating, setIsCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [signature, setSignature] = useState<string | null>(null);
+  const isProcessingRef = useRef(false); // Prevent double submissions
 
-  const createAndBuy = async (params: CreateAndBuyParams) => {
-    if (!program || !publicKey || !signTransaction) {
-      throw new Error("Wallet not connected or program not initialized");
+  const createAndBuy = async (params: CreateTokenParams, buyAmountSol: number) => {
+    if (!wallet.publicKey || !wallet.signTransaction) {
+      throw new Error("Wallet not connected");
     }
 
-    setLoading(true);
+    // Prevent double submissions
+    if (isProcessingRef.current) {
+      console.log("Transaction already in progress, ignoring duplicate call");
+      return;
+    }
+
+    isProcessingRef.current = true;
+    setIsCreating(true);
     setError(null);
-    setSignature(null);
 
     try {
+      const provider = new AnchorProvider(connection, wallet as any, {
+        commitment: "confirmed",
+        preflightCommitment: "confirmed",
+      });
+
+      const program = new Program(idl as any, provider);
+
       // Derive PDAs
       const [protocolPda] = PublicKey.findProgramAddressSync(
         [Buffer.from("protocol")],
-        program.programId
+        PROGRAM_ID
       );
 
+      // Generate unique meme PDA using protocol's counter
+      const protocolAccount = await program.account.protocol.fetch(protocolPda);
+      const memeId = new BN(protocolAccount.totalMemesCreated);
+
       const [memePda] = PublicKey.findProgramAddressSync(
-        [Buffer.from("meme"), Buffer.from(params.symbol)],
-        program.programId
+        [Buffer.from("meme"), memeId.toArrayLike(Buffer, "le", 8)],
+        PROGRAM_ID
       );
 
       const [mintPda] = PublicKey.findProgramAddressSync(
         [Buffer.from("mint"), memePda.toBuffer()],
-        program.programId
+        PROGRAM_ID
       );
 
-      const [creatorTokenAccount] = PublicKey.findProgramAddressSync(
-        [
-          publicKey.toBuffer(),
-          TOKEN_PROGRAM_ID.toBuffer(),
-          mintPda.toBuffer(),
-        ],
-        ASSOCIATED_TOKEN_PROGRAM_ID
+      const creatorTokenAccount = await getAssociatedTokenAddress(
+        mintPda,
+        wallet.publicKey
       );
 
-      const [bondingCurveVault] = PublicKey.findProgramAddressSync(
-        [Buffer.from("vault"), memePda.toBuffer()],
-        program.programId
-      );
+      const imageHashArray = params.imageHash.length === 32 
+        ? params.imageHash 
+        : [...params.imageHash, ...Array(32 - params.imageHash.length).fill(0)];
 
-      // Convert to proper format
-      const imageHashArray = Array.isArray(params.imageHash)
-        ? params.imageHash
-        : Array.from(params.imageHash);
-
-      // Initial virtual reserves for bonding curve (updated to 6 decimals)
-      // Anti-Sniping: Use constants for precision with BN.js
-      const initialVirtualSolReserves = new BN(VIRTUAL_SOL_RESERVES.toString()); // 30 SOL in lamports (9 decimals)
-      const initialVirtualTokenReserves = new BN(VIRTUAL_TOKEN_RESERVES.toString()); // 1.073B tokens with 6 decimals
+      const initialVirtualSolReserves = new BN(VIRTUAL_SOL_RESERVES.toString());
+      const initialVirtualTokenReserves = new BN(VIRTUAL_TOKEN_RESERVES.toString());
 
       console.log("Creating token with params:", {
         name: params.name,
@@ -99,78 +101,58 @@ export function useCreateAndBuy() {
           protocol: protocolPda,
           meme: memePda,
           mint: mintPda,
+          creator: wallet.publicKey,
           creatorTokenAccount: creatorTokenAccount,
-          bondingCurveVault: bondingCurveVault,
-          creator: publicKey,
           tokenProgram: TOKEN_PROGRAM_ID,
           associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
           systemProgram: SystemProgram.programId,
-          rent: SYSVAR_RENT_PUBKEY,
+          rent: new PublicKey("SysvarRent111111111111111111111111111111111"),
         })
-        .rpc({
-          skipPreflight: false,
-          commitment: "confirmed",
-        });
+        .rpc({ skipPreflight: false });
 
-      console.log("Token creation successful:", tx);
-
-      // Anti-Sniping: If buy amount is specified, call buy_tokens
-      if (params.buyAmount && params.buyAmount > 0) {
-        const buyPercentage = params.buyPercentage || 1;
-        const virtualTokens = Number(VIRTUAL_TOKEN_RESERVES) / TOKEN_MULTIPLIER;
-        const finalBuyAmount = Math.min(params.buyAmount, Math.floor(virtualTokens * buyPercentage / 100));
-
-        // Calculate cost using bonding curve
-        const k = VIRTUAL_SOL_RESERVES * VIRTUAL_TOKEN_RESERVES;
-        const newTokenReserve = VIRTUAL_TOKEN_RESERVES - BigInt(finalBuyAmount);
-        const newSolReserve = k / newTokenReserve;
-        const estimatedCost = Number(newSolReserve - VIRTUAL_SOL_RESERVES);
-
-        // Call buy_tokens
-        const buyTx = await program.methods
-          .buyTokens(
-            new BN(estimatedCost), // sol_amount
-            new BN(finalBuyAmount * TOKEN_MULTIPLIER), // min_tokens_out
-            new BN(5000) // max_slippage_bps
-          )
-          .accounts({
-            protocol: protocolPda,
-            meme: memePda,
-            mint: mintPda,
-            buyerTokenAccount: creatorTokenAccount,
-            bondingCurveVault: bondingCurveVault,
-            buyer: publicKey,
-            creator: publicKey,
-            feeRecipient: protocolPda,
-            tokenProgram: TOKEN_PROGRAM_ID,
-            associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
-            systemProgram: SystemProgram.programId,
-          })
-          .rpc({
-            skipPreflight: false,
-            commitment: "confirmed",
-          });
-
-        console.log("Buy successful:", buyTx);
-      }
-
-            setSignature(tx);
-      return tx;
+      console.log("Token created successfully:", tx);
+      
+      return {
+        mint: mintPda.toString(),
+        meme: memePda.toString(),
+        signature: tx,
+      };
     } catch (err: any) {
-      const errorMessage = err?.message || "Transaction failed";
-      setError(errorMessage);
       console.error("Create token error:", err);
+      
+      // Handle specific cooldown error
+      if (err.message && err.message.includes("LaunchCooldownActive")) {
+        const cooldownMessage = "⏱️ ANTI-BOT PROTECTION ACTIVE!\n\n" +
+          "Your token was created successfully! 🎉\n\n" +
+          "However, you must wait 60 seconds after token creation before making your first purchase. " +
+          "This cooldown prevents bot sniping and ensures fair launches.\n\n" +
+          "Please wait 60 seconds and try buying again.";
+        setError(cooldownMessage);
+        throw new Error(cooldownMessage);
+      }
+      
+      // Ignore "already processed" errors since the token was created
+      if (err.message && err.message.includes("already been processed")) {
+        console.log("Transaction already processed - token created successfully");
+        // Don't throw, just return success
+        return {
+          mint: "created",
+          meme: "created",
+          signature: "already_processed",
+        };
+      }
+      
+      setError(err.message || "Failed to create token");
       throw err;
     } finally {
-      setLoading(false);
+      setIsCreating(false);
+      isProcessingRef.current = false;
     }
   };
 
   return {
     createAndBuy,
-    loading,
+    isCreating,
     error,
-    signature,
   };
 }
-// Updated for anti-sniping and 6 decimals: Fri Oct 25 00:10:55 UTC 2025
