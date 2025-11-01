@@ -17,28 +17,32 @@ export default function BondingCurveProgress({
   totalSupply,
   targetSol = Number(GRADUATION_THRESHOLD.toString()) / 1e9,
 }: BondingCurveProgressProps) {
-  // ===== UPDATED: Changed from 1e9 to 1e6 for 6 decimals =====
-  const currentSol = Number(virtualSolReserves.toString()) / 1e9; // SOL still has 9 decimals
-  const tokensAvailable = Number(virtualTokenReserves.toString()) / 1e6; // CHANGED: Tokens now have 6 decimals
-  const totalTokens = Number(totalSupply.toString()) / 1e6; // CHANGED: Tokens now have 6 decimals
+  // Convert to numbers with correct decimals
+  const currentSol = Number(virtualSolReserves.toString()) / 1e9; // SOL has 9 decimals
+  const tokensAvailable = Number(virtualTokenReserves.toString()) / 1e6; // Tokens have 6 decimals
+  const totalTokens = Number(totalSupply.toString()) / 1e6; // Tokens have 6 decimals
   
-  // ===== UPDATED: Use constants for initial reserves =====
+  // Initial reserves for calculations
   const initialSol = Number(VIRTUAL_SOL_RESERVES.toString()) / 1e9;
-  const initialVirtualTokenReserves = new BN(VIRTUAL_TOKEN_RESERVES.toString());
+  const initialTokens = Number(VIRTUAL_TOKEN_RESERVES.toString()) / 1e6;
   
   // Calculate progress percentage (subtract initial reserves to start at 0%)
   const progressPercent = Math.max(0, Math.min(((currentSol - initialSol) / (targetSol - initialSol)) * 100, 100));
   
-  // Calculate market cap (current SOL * 2 for full supply value)
-  const marketCap = currentSol * 2;
-  
   // Calculate tokens sold
-  const tokensSoldBN = initialVirtualTokenReserves.sub(new BN(virtualTokenReserves.toString()));
-  const tokensSold = Math.max(0, Number(tokensSoldBN.toString()) / 1e6); // CHANGED: 6 decimals
+  const tokensSold = Math.max(0, initialTokens - tokensAvailable);
   const tokensSoldPercent = totalTokens > 0 ? (tokensSold / totalTokens) * 100 : 0;
   
-  // Price per token (in SOL)
+  // Calculate current price using bonding curve formula
+  // Price = (current_sol_reserves / current_token_reserves)
   const pricePerToken = tokensAvailable > 0 ? currentSol / tokensAvailable : 0;
+  
+  // Calculate market cap: total supply * current price
+  const marketCapSOL = totalTokens * pricePerToken;
+  
+  // For USD conversion, we'll fetch real SOL price or use a reasonable estimate
+  // For now, let's just show SOL values primarily
+  const solPriceUSD = 150; // You can fetch this from an API later
   
   return (
     <Card className="p-6">
@@ -78,14 +82,14 @@ export default function BondingCurveProgress({
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="p-3 bg-muted/50 rounded-lg">
             <div className="text-xs text-muted-foreground mb-1">Market Cap</div>
-            <div className="text-lg font-bold">${(marketCap * 150).toFixed(0)}</div>
-            <div className="text-xs text-muted-foreground">{marketCap.toFixed(2)} SOL</div>
+            <div className="text-lg font-bold">${(marketCapSOL * solPriceUSD).toLocaleString('en-US', { maximumFractionDigits: 0 })}</div>
+            <div className="text-xs text-muted-foreground">{marketCapSOL.toFixed(2)} SOL</div>
           </div>
 
           <div className="p-3 bg-muted/50 rounded-lg">
             <div className="text-xs text-muted-foreground mb-1">Price</div>
-            <div className="text-lg font-bold">${(pricePerToken * 150).toFixed(6)}</div>
-            <div className="text-xs text-muted-foreground">{pricePerToken.toFixed(9)} SOL</div>
+            <div className="text-lg font-bold">${(pricePerToken * solPriceUSD).toFixed(8)}</div>
+            <div className="text-xs text-muted-foreground">{pricePerToken.toExponential(4)} SOL</div>
           </div>
 
           <div className="p-3 bg-muted/50 rounded-lg">
@@ -129,4 +133,3 @@ export default function BondingCurveProgress({
     </Card>
   );
 }
-// Updated to display total collected SOL and full target: Sat Oct 26 01:35:30 UTC 2025
