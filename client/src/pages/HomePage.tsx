@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useRouter } from "next/router";
+import { useNavigate } from "react-router-dom";
 import HeroSection from "@/components/HeroSection";
 import FeatureHighlight from "@/components/FeatureHighlight";
 import TrendingMemes from "@/components/TrendingMemes";
@@ -7,7 +7,7 @@ import TokenCard from "@/components/TokenCard";
 import WalletConnectionModal from "@/components/WalletConnectionModal";
 
 export default function HomePage() {
-  const router = useRouter();
+  const navigate = useNavigate();
   const [walletModalOpen, setWalletModalOpen] = useState(false);
 
   const mockMemes = [
@@ -98,7 +98,7 @@ export default function HomePage() {
     <div className="min-h-screen">
       <HeroSection
         onConnectWallet={() => setWalletModalOpen(true)}
-        onCreateToken={() => router.push('/create')}
+        onCreateToken={() => navigate('/create')}
       />
 
       <FeatureHighlight />
@@ -107,7 +107,7 @@ export default function HomePage() {
         memes={mockMemes}
         onCreateFromMeme={(meme) => {
           console.log("Creating token from meme:", meme);
-          router.push('/create');
+          navigate('/create');
         }}
       />
 
