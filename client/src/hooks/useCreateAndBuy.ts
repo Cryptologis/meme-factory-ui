@@ -137,14 +137,14 @@ export function useCreateAndBuy() {
             protocol: protocolPda,
             meme: memePda,
             mint: mintPda,
-            buyerTokenAccount: creatorTokenAccount, // Assuming creator buys
+            buyerTokenAccount: creatorTokenAccount,
             bondingCurveVault: bondingCurveVault,
             buyer: publicKey,
             creator: publicKey,
-            feeRecipient: publicKey, // Placeholder
+            feeRecipient: protocolPda,
             tokenProgram: TOKEN_PROGRAM_ID,
+            associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
             systemProgram: SystemProgram.programId,
-            instructionSysvar: SYSVAR_RENT_PUBKEY, // Placeholder for priority fee
           })
           .rpc({
             skipPreflight: false,
@@ -152,13 +152,9 @@ export function useCreateAndBuy() {
           });
 
         console.log("Buy successful:", buyTx);
-        await connection.confirmTransaction(buyTx, "confirmed");
       }
 
-      // Wait for confirmation
-      await connection.confirmTransaction(tx, "confirmed");
-
-      setSignature(tx);
+            setSignature(tx);
       return tx;
     } catch (err: any) {
       const errorMessage = err?.message || "Transaction failed";
