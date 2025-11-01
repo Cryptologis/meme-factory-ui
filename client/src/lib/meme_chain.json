@@ -1,10 +1,10 @@
 {
-  "address": "FgKLBQuE6Ksctz4gjFk1BjiBCcUqmnYFy7986ecuNqLS",
+  "address": "CRJDPpTp3aayKYZCaLEYntnpP3xvwbeTDYMdu18RtHwh",
   "metadata": {
     "name": "meme_chain",
     "version": "0.1.0",
     "spec": "0.1.0",
-    "description": "Created with Anchor"
+    "description": "Anti-PVP/Anti-Bundling/Anti-Bot Launchpad for Solana Meme Tokens"
   },
   "instructions": [
     {
@@ -574,72 +574,6 @@
           }
         }
       ]
-    },
-    {
-      "name": "renounce_mint_authority",
-      "discriminator": [
-        201,
-        193,
-        156,
-        2,
-        218,
-        222,
-        152,
-        186
-      ],
-      "accounts": [
-        {
-          "name": "meme",
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  109,
-                  101,
-                  109,
-                  101
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "meme.symbol",
-                "account": "MemeToken"
-              }
-            ]
-          }
-        },
-        {
-          "name": "mint",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  109,
-                  105,
-                  110,
-                  116
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "meme"
-              }
-            ]
-          }
-        },
-        {
-          "name": "authority",
-          "signer": true
-        },
-        {
-          "name": "token_program",
-          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
-        }
-      ],
-      "args": []
     },
     {
       "name": "sell_tokens",
