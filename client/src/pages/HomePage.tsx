@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation } from "wouter";
 import HeroSection from "@/components/HeroSection";
 import FeatureHighlight from "@/components/FeatureHighlight";
 import TrendingMemes from "@/components/TrendingMemes";
@@ -19,11 +19,11 @@ import {
   ArrowRight,
   Clock,
   Percent,
-  Target
+  Sparkles
 } from "lucide-react";
 
 export default function HomePage() {
-  const navigate = useNavigate();
+  const [, setLocation] = useLocation();
   const [walletModalOpen, setWalletModalOpen] = useState(false);
 
   const mockMemes = [
@@ -114,7 +114,7 @@ export default function HomePage() {
     <div className="min-h-screen">
       <HeroSection
         onConnectWallet={() => setWalletModalOpen(true)}
-        onCreateToken={() => navigate('/create')}
+        onCreateToken={() => setLocation('/create')}
       />
 
       {/* How It Works Section */}
@@ -338,7 +338,7 @@ export default function HomePage() {
 
               <Button 
                 size="lg" 
-                onClick={() => navigate('/create')}
+                onClick={() => setLocation('/create')}
                 className="gap-2"
               >
                 Start Earning Now
@@ -399,7 +399,7 @@ export default function HomePage() {
         memes={mockMemes}
         onCreateFromMeme={(meme) => {
           console.log("Creating token from meme:", meme);
-          navigate('/create');
+          setLocation('/create');
         }}
       />
 
@@ -411,7 +411,7 @@ export default function HomePage() {
               Fair-launched tokens with creator rewards & anti-PVP protection
             </p>
           </div>
-          <Button variant="outline" onClick={() => navigate('/trade')}>
+          <Button variant="outline" onClick={() => setLocation('/trade')}>
             View All
             <ArrowRight className="w-4 h-4 ml-2" />
           </Button>
@@ -437,7 +437,7 @@ export default function HomePage() {
             <Button 
               size="lg"
               variant="secondary"
-              onClick={() => navigate('/create')}
+              onClick={() => setLocation('/create')}
               className="gap-2 text-lg px-8"
             >
               <Sparkles className="w-5 h-5" />
@@ -446,7 +446,7 @@ export default function HomePage() {
             <Button 
               size="lg"
               variant="outline"
-              onClick={() => navigate('/trade')}
+              onClick={() => setLocation('/trade')}
               className="gap-2 text-lg px-8 bg-white/10 border-white/20 text-white hover:bg-white/20"
             >
               Explore Tokens
