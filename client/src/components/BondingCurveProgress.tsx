@@ -19,12 +19,22 @@ export default function BondingCurveProgress({
 }: BondingCurveProgressProps) {
   // Convert to numbers with correct decimals
   const currentSol = Number(virtualSolReserves.toString()) / 1e9; // SOL has 9 decimals
-  const tokensAvailable = Number(virtualTokenReserves.toString()) / 1e6; // Tokens have 6 decimals
-  const totalTokens = Number(totalSupply.toString()) / 1e6; // Tokens have 6 decimals
+  const tokensAvailable = Number(virtualTokenReserves.toString()); // Raw value from chain
+  const totalTokens = Number(totalSupply.toString()); // Raw value from chain
+  
+  // DEBUG: Log the actual values
+  console.log("🔍 BondingCurve Debug:", {
+    virtualSolReserves: virtualSolReserves.toString(),
+    virtualTokenReserves: virtualTokenReserves.toString(),
+    totalSupply: totalSupply.toString(),
+    currentSol,
+    tokensAvailable,
+    totalTokens,
+  });
   
   // Initial reserves for calculations
   const initialSol = Number(VIRTUAL_SOL_RESERVES.toString()) / 1e9;
-  const initialTokens = Number(VIRTUAL_TOKEN_RESERVES.toString()) / 1e6;
+  const initialTokens = Number(VIRTUAL_TOKEN_RESERVES.toString());
   
   // Calculate progress percentage (subtract initial reserves to start at 0%)
   const progressPercent = Math.max(0, Math.min(((currentSol - initialSol) / (targetSol - initialSol)) * 100, 100));
@@ -37,12 +47,19 @@ export default function BondingCurveProgress({
   // Price = (current_sol_reserves / current_token_reserves)
   const pricePerToken = tokensAvailable > 0 ? currentSol / tokensAvailable : 0;
   
+  console.log("💰 Price Calculation:", {
+    currentSol,
+    tokensAvailable,
+    pricePerToken,
+    priceInSOL: pricePerToken,
+    priceInUSD: pricePerToken * 150,
+  });
+  
   // Calculate market cap: total supply * current price
   const marketCapSOL = totalTokens * pricePerToken;
   
-  // For USD conversion, we'll fetch real SOL price or use a reasonable estimate
-  // For now, let's just show SOL values primarily
-  const solPriceUSD = 150; // You can fetch this from an API later
+  // For USD conversion
+  const solPriceUSD = 150;
   
   return (
     <Card className="p-6">
