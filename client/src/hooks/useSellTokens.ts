@@ -59,11 +59,11 @@ export function useSellTokens() {
       const minSolOut = new BN(0);
       const maxSlippageBps = 500;
 
-      console.log("Selling", params.tokenAmount, "tokens");
+      console.log("🔄 Selling", params.tokenAmount, "tokens");
 
       await new Promise(resolve => setTimeout(resolve, 100));
 
-      const tx = await program.methods
+      const signature = await program.methods
         .sellTokens(tokenAmountRaw, minSolOut, maxSlippageBps)
         .accounts({
           protocol: protocolPda,
@@ -82,20 +82,39 @@ export function useSellTokens() {
           commitment: "confirmed",
         });
 
-      console.log("Sell successful:", tx);
+      console.log("✅ Transaction sent:", signature);
+      console.log("🔗 View on explorer:", `https://explorer.solana.com/tx/${signature}?cluster=devnet`);
+
+      console.log("⏳ Waiting for confirmation...");
       
       try {
-        await connection.confirmTransaction(tx, "confirmed");
+        const confirmationTimeout = 60000;
+        await Promise.race([
+          connection.confirmTransaction(signature, "confirmed"),
+          new Promise((_, reject) => 
+            setTimeout(() => reject(new Error("Confirmation timeout")), confirmationTimeout)
+          )
+        ]);
+
+        console.log("✅ Transaction confirmed!");
+        return signature;
       } catch (confirmError) {
-        console.log("Transaction succeeded but confirmation timed out");
+        console.warn("⚠️ Confirmation timeout, but transaction may have succeeded");
+        console.log("🔗 Check transaction:", `https://explorer.solana.com/tx/${signature}?cluster=devnet`);
+        return signature;
       }
-      
-      return tx;
     } catch (err: any) {
       const errorMessage = err?.message || "Sell failed";
       setError(errorMessage);
-      console.error("Sell error:", err);
-      return null;
+      console.error("❌ Sell error:", err);
+      
+      if (err?.signature) {
+        console.log("Transaction may have been sent:", err.signature);
+        console.log("Check:", `https://explorer.solana.com/tx/${err.signature}?cluster=devnet`);
+        return err.signature;
+      }
+      
+      throw err;
     } finally {
       setLoading(false);
     }

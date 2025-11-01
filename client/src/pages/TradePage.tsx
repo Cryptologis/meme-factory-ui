@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Search, TrendingUp, TrendingDown, RefreshCw } from "lucide-react";
+import { Search, TrendingUp, TrendingDown, RefreshCw, ExternalLink } from "lucide-react";
 import Portfolio from "@/components/Portfolio";
 import BondingCurveProgress from "@/components/BondingCurveProgress";
 import { useProgram } from "@/hooks/useProgram";
@@ -23,10 +23,10 @@ export default function TradePage() {
   const [loading, setLoading] = useState(false);
   const [buyAmount, setBuyAmount] = useState("");
   const [sellAmount, setSellAmount] = useState("");
+  const [lastTxSignature, setLastTxSignature] = useState<string | null>(null);
   
   const hasLoadedFromUrlRef = useRef(false);
 
-  // Only load from URL once on mount
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const tokenParam = params.get('token');
@@ -101,21 +101,36 @@ export default function TradePage() {
     }
 
     try {
-      const tx = await buyTokens({
+      const signature = await buyTokens({
         memePda: selectedToken.pda,
         solAmount: parseFloat(buyAmount),
       });
 
+      setLastTxSignature(signature);
+      
       toast({
         title: "Purchase Complete! 🎉",
-        description: "Click the refresh button (↻) to update bonding curve",
+        description: (
+          <div className="space-y-2">
+            <p>Bought tokens for {buyAmount} SOL</p>
+            <a 
+              href={`https://explorer.solana.com/tx/${signature}?cluster=devnet`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-500 hover:underline flex items-center gap-1"
+            >
+              View Transaction <ExternalLink className="w-3 h-3" />
+            </a>
+          </div>
+        ),
       });
 
       setBuyAmount("");
     } catch (error: any) {
+      console.error("Buy error:", error);
       toast({
-        title: "Transaction Error",
-        description: error.message || "Failed to complete purchase",
+        title: "Transaction Failed",
+        description: error.message || "Failed to buy tokens",
         variant: "destructive",
       });
     }
@@ -132,21 +147,36 @@ export default function TradePage() {
     }
 
     try {
-      const tx = await sellTokens({
+      const signature = await sellTokens({
         memePda: selectedToken.pda,
         tokenAmount: parseFloat(sellAmount),
       });
 
+      setLastTxSignature(signature);
+
       toast({
         title: "Sale Complete! 💰",
-        description: "Click the refresh button (↻) to update bonding curve",
+        description: (
+          <div className="space-y-2">
+            <p>Sold {sellAmount} tokens</p>
+            <a 
+              href={`https://explorer.solana.com/tx/${signature}?cluster=devnet`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-500 hover:underline flex items-center gap-1"
+            >
+              View Transaction <ExternalLink className="w-3 h-3" />
+            </a>
+          </div>
+        ),
       });
 
       setSellAmount("");
     } catch (error: any) {
+      console.error("Sell error:", error);
       toast({
-        title: "Transaction Error",
-        description: error.message || "Failed to complete sale",
+        title: "Transaction Failed",
+        description: error.message || "Failed to sell tokens",
         variant: "destructive",
       });
     }
@@ -186,6 +216,21 @@ export default function TradePage() {
                 <p className="text-xs font-mono">Example: GKsM8pqkC5N3Hj6jT1gbPShdYreJ8jU8aFNVZXQ4U7Ld</p>
               </div>
             </Card>
+
+            {lastTxSignature && (
+              <Card className="p-4 bg-green-500/5 border-green-500/20">
+                <p className="text-sm font-semibold mb-2">Last Transaction:</p>
+                <a
+                  href={`https://explorer.solana.com/tx/${lastTxSignature}?cluster=devnet`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs font-mono text-blue-500 hover:underline break-all flex items-center gap-2"
+                >
+                  {lastTxSignature}
+                  <ExternalLink className="w-4 h-4 flex-shrink-0" />
+                </a>
+              </Card>
+            )}
 
             {selectedToken && (
               <>
