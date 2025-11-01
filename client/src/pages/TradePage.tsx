@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Search, TrendingUp, TrendingDown } from "lucide-react";
+import { Search, TrendingUp, TrendingDown, RefreshCw } from "lucide-react";
 import Portfolio from "@/components/Portfolio";
 import BondingCurveProgress from "@/components/BondingCurveProgress";
 import { useProgram } from "@/hooks/useProgram";
@@ -26,6 +26,7 @@ export default function TradePage() {
   
   const hasLoadedFromUrlRef = useRef(false);
 
+  // Only load from URL once on mount
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const tokenParam = params.get('token');
@@ -34,7 +35,7 @@ export default function TradePage() {
       setSearchAddress(tokenParam);
       searchTokenByAddress(tokenParam);
     }
-  }, []);
+  }, [program]);
 
   const searchTokenByAddress = async (address: string) => {
     if (!program || !address) return;
@@ -73,7 +74,7 @@ export default function TradePage() {
       });
 
       toast({
-        title: "Token Found!",
+        title: "Token Loaded!",
         description: `${tokenData.name} (${tokenData.symbol})`,
       });
     } catch (error: any) {
@@ -107,18 +108,16 @@ export default function TradePage() {
 
       toast({
         title: "Purchase Complete! 🎉",
-        description: tx ? `Bought tokens for ${buyAmount} SOL` : "Tokens purchased successfully",
+        description: "Click the refresh button (↻) to update bonding curve",
       });
 
       setBuyAmount("");
-      searchTokenByAddress(selectedToken.pda);
     } catch (error: any) {
       toast({
-        title: "Buy Completed",
-        description: "Please refresh to see updated balance",
+        title: "Transaction Error",
+        description: error.message || "Failed to complete purchase",
+        variant: "destructive",
       });
-      setBuyAmount("");
-      searchTokenByAddress(selectedToken.pda);
     }
   };
 
@@ -140,18 +139,16 @@ export default function TradePage() {
 
       toast({
         title: "Sale Complete! 💰",
-        description: tx ? `Sold ${sellAmount} tokens` : "Tokens sold successfully",
+        description: "Click the refresh button (↻) to update bonding curve",
       });
 
       setSellAmount("");
-      searchTokenByAddress(selectedToken.pda);
     } catch (error: any) {
       toast({
-        title: "Sell Completed",
-        description: "Please refresh to see updated balance",
+        title: "Transaction Error",
+        description: error.message || "Failed to complete sale",
+        variant: "destructive",
       });
-      setSellAmount("");
-      searchTokenByAddress(selectedToken.pda);
     }
   };
 
@@ -176,6 +173,7 @@ export default function TradePage() {
                   placeholder="Enter Token CA (Mint Address)..."
                   value={searchAddress}
                   onChange={(e) => setSearchAddress(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && searchToken()}
                   className="font-mono text-sm"
                 />
                 <Button onClick={searchToken} disabled={loading}>
@@ -192,13 +190,26 @@ export default function TradePage() {
             {selectedToken && (
               <>
                 <Card className="p-6">
-                  <div className="mb-4">
-                    <h2 className="text-2xl font-bold mb-1">{selectedToken.name}</h2>
-                    <p className="text-muted-foreground mb-2">{selectedToken.symbol}</p>
-                    <div className="text-xs font-mono text-muted-foreground space-y-1">
-                      <p>Token CA: {selectedToken.mint}</p>
-                      <p>Meme PDA: {selectedToken.pda}</p>
+                  <div className="flex justify-between items-start mb-4">
+                    <div className="flex-1">
+                      <h2 className="text-2xl font-bold mb-1">{selectedToken.name}</h2>
+                      <p className="text-muted-foreground mb-2">{selectedToken.symbol}</p>
+                      <div className="text-xs font-mono text-muted-foreground space-y-1">
+                        <p>Token CA: {selectedToken.mint}</p>
+                        <p>Meme PDA: {selectedToken.pda}</p>
+                      </div>
                     </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => searchTokenByAddress(selectedToken.pda)}
+                      disabled={loading}
+                      title="Refresh token data from blockchain"
+                      className="ml-4"
+                    >
+                      <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+                      Refresh
+                    </Button>
                   </div>
                   
                   <div className="grid grid-cols-2 gap-4 text-sm mb-6">
