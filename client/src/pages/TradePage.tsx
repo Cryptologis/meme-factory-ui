@@ -1,9 +1,8 @@
-import { useState, useEffect } from "react";
-import { useLocation, useSearch } from "wouter";
+import { useState, useEffect, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Search, TrendingUp, TrendingDown, RefreshCw } from "lucide-react";
+import { Search, TrendingUp, TrendingDown } from "lucide-react";
 import Portfolio from "@/components/Portfolio";
 import BondingCurveProgress from "@/components/BondingCurveProgress";
 import { useProgram } from "@/hooks/useProgram";
@@ -14,8 +13,6 @@ import { PublicKey } from "@solana/web3.js";
 import { toast } from "@/hooks/use-toast";
 
 export default function TradePage() {
-  const [, setLocation] = useLocation();
-  const searchParams = useSearch();
   const program = useProgram();
   const { publicKey } = useWallet();
   const { buyTokens, loading: buyLoading } = useBuyTokens();
@@ -26,18 +23,18 @@ export default function TradePage() {
   const [loading, setLoading] = useState(false);
   const [buyAmount, setBuyAmount] = useState("");
   const [sellAmount, setSellAmount] = useState("");
+  
+  const hasLoadedFromUrlRef = useRef(false);
 
-  // Load token from URL parameter on mount AND when program changes
   useEffect(() => {
-    const params = new URLSearchParams(searchParams);
+    const params = new URLSearchParams(window.location.search);
     const tokenParam = params.get('token');
-    
-    if (tokenParam && program) {
-      console.log("Loading token from URL:", tokenParam);
+    if (tokenParam && program && !hasLoadedFromUrlRef.current) {
+      hasLoadedFromUrlRef.current = true;
       setSearchAddress(tokenParam);
       searchTokenByAddress(tokenParam);
     }
-  }, [program, searchParams]);
+  }, []);
 
   const searchTokenByAddress = async (address: string) => {
     if (!program || !address) return;
@@ -63,7 +60,7 @@ export default function TradePage() {
 
       const tokenData = await program.account.memeToken.fetch(memePda);
       
-      const tokenInfo = {
+      setSelectedToken({
         pda: memePda.toString(),
         mint: tokenData.mint.toString(),
         name: tokenData.name,
@@ -73,24 +70,10 @@ export default function TradePage() {
         virtualTokenReserves: tokenData.virtualTokenReserves,
         totalSupply: tokenData.totalSupply,
         isGraduated: tokenData.isGraduated,
-      };
-      
-      setSelectedToken(tokenInfo);
-
-      // Update URL to maintain token parameter
-      const params = new URLSearchParams(window.location.search);
-      if (params.get('token') !== memePda.toString()) {
-        window.history.replaceState({}, '', `/trade?token=${memePda.toString()}`);
-      }
-
-      console.log("✅ Token loaded:", {
-        name: tokenInfo.name,
-        virtualSol: Number(tokenData.virtualSolReserves.toString()) / 1e9,
-        virtualTokens: Number(tokenData.virtualTokenReserves.toString()) / 1e6,
       });
 
       toast({
-        title: "Token Loaded!",
+        title: "Token Found!",
         description: `${tokenData.name} (${tokenData.symbol})`,
       });
     } catch (error: any) {
@@ -103,13 +86,6 @@ export default function TradePage() {
       setSelectedToken(null);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const refreshTokenData = async () => {
-    if (selectedToken?.pda) {
-      console.log("🔄 Refreshing token data...");
-      await searchTokenByAddress(selectedToken.pda);
     }
   };
 
@@ -131,24 +107,18 @@ export default function TradePage() {
 
       toast({
         title: "Purchase Complete! 🎉",
-        description: `Bought tokens for ${buyAmount} SOL`,
+        description: tx ? `Bought tokens for ${buyAmount} SOL` : "Tokens purchased successfully",
       });
 
       setBuyAmount("");
-      
-      // Wait a moment for blockchain to update, then refresh
-      setTimeout(() => {
-        console.log("Refreshing after buy...");
-        refreshTokenData();
-      }, 2000);
-      
+      searchTokenByAddress(selectedToken.pda);
     } catch (error: any) {
-      console.error("Buy error:", error);
       toast({
-        title: "Transaction Failed",
-        description: error.message || "Failed to buy tokens",
-        variant: "destructive",
+        title: "Buy Completed",
+        description: "Please refresh to see updated balance",
       });
+      setBuyAmount("");
+      searchTokenByAddress(selectedToken.pda);
     }
   };
 
@@ -170,32 +140,22 @@ export default function TradePage() {
 
       toast({
         title: "Sale Complete! 💰",
-        description: `Sold ${sellAmount} tokens`,
+        description: tx ? `Sold ${sellAmount} tokens` : "Tokens sold successfully",
       });
 
       setSellAmount("");
-      
-      // Wait a moment for blockchain to update, then refresh
-      setTimeout(() => {
-        console.log("Refreshing after sell...");
-        refreshTokenData();
-      }, 2000);
-      
+      searchTokenByAddress(selectedToken.pda);
     } catch (error: any) {
-      console.error("Sell error:", error);
       toast({
-        title: "Transaction Failed",
-        description: error.message || "Failed to sell tokens",
-        variant: "destructive",
+        title: "Sell Completed",
+        description: "Please refresh to see updated balance",
       });
+      setSellAmount("");
+      searchTokenByAddress(selectedToken.pda);
     }
   };
 
-  const searchToken = () => {
-    if (searchAddress) {
-      searchTokenByAddress(searchAddress);
-    }
-  };
+  const searchToken = () => searchTokenByAddress(searchAddress);
 
   return (
     <div className="min-h-screen py-16">
@@ -216,7 +176,6 @@ export default function TradePage() {
                   placeholder="Enter Token CA (Mint Address)..."
                   value={searchAddress}
                   onChange={(e) => setSearchAddress(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && searchToken()}
                   className="font-mono text-sm"
                 />
                 <Button onClick={searchToken} disabled={loading}>
@@ -233,23 +192,13 @@ export default function TradePage() {
             {selectedToken && (
               <>
                 <Card className="p-6">
-                  <div className="flex justify-between items-start mb-4">
-                    <div>
-                      <h2 className="text-2xl font-bold mb-1">{selectedToken.name}</h2>
-                      <p className="text-muted-foreground mb-2">{selectedToken.symbol}</p>
-                      <div className="text-xs font-mono text-muted-foreground space-y-1">
-                        <p>Token CA: {selectedToken.mint}</p>
-                        <p>Meme PDA: {selectedToken.pda}</p>
-                      </div>
+                  <div className="mb-4">
+                    <h2 className="text-2xl font-bold mb-1">{selectedToken.name}</h2>
+                    <p className="text-muted-foreground mb-2">{selectedToken.symbol}</p>
+                    <div className="text-xs font-mono text-muted-foreground space-y-1">
+                      <p>Token CA: {selectedToken.mint}</p>
+                      <p>Meme PDA: {selectedToken.pda}</p>
                     </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={refreshTokenData}
-                      disabled={loading}
-                    >
-                      <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-                    </Button>
                   </div>
                   
                   <div className="grid grid-cols-2 gap-4 text-sm mb-6">
