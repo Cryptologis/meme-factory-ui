@@ -1,5 +1,5 @@
 {
-  "address": "CRJDPpTp3aayKYZCaLEYntnpP3xvwbeTDYMdu18RtHwh",
+  "address": "3HNNR5wUZxPpFUDfmHA9UEfDagN1i8bxMjtm8Hea5yPf",
   "metadata": {
     "name": "meme_chain",
     "version": "0.1.0",
@@ -22,46 +22,11 @@
       "accounts": [
         {
           "name": "protocol",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  112,
-                  114,
-                  111,
-                  116,
-                  111,
-                  99,
-                  111,
-                  108
-                ]
-              }
-            ]
-          }
+          "writable": true
         },
         {
           "name": "meme",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  109,
-                  101,
-                  109,
-                  101
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "meme.symbol",
-                "account": "MemeToken"
-              }
-            ]
-          }
+          "writable": true
         },
         {
           "name": "mint",
@@ -252,24 +217,7 @@
       "accounts": [
         {
           "name": "protocol",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  112,
-                  114,
-                  111,
-                  116,
-                  111,
-                  99,
-                  111,
-                  108
-                ]
-              }
-            ]
-          }
+          "writable": true
         },
         {
           "name": "meme",
@@ -441,10 +389,6 @@
         {
           "name": "system_program",
           "address": "11111111111111111111111111111111"
-        },
-        {
-          "name": "rent",
-          "address": "SysvarRent111111111111111111111111111111111"
         }
       ],
       "args": [
@@ -542,40 +486,6 @@
       ]
     },
     {
-      "name": "migrate_to_amm",
-      "discriminator": [
-        207,
-        82,
-        192,
-        145,
-        254,
-        207,
-        145,
-        223
-      ],
-      "accounts": [
-        {
-          "name": "meme",
-          "writable": true
-        },
-        {
-          "name": "authority",
-          "writable": true,
-          "signer": true
-        }
-      ],
-      "args": [
-        {
-          "name": "amm_type",
-          "type": {
-            "defined": {
-              "name": "AmmType"
-            }
-          }
-        }
-      ]
-    },
-    {
       "name": "sell_tokens",
       "discriminator": [
         114,
@@ -590,46 +500,11 @@
       "accounts": [
         {
           "name": "protocol",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  112,
-                  114,
-                  111,
-                  116,
-                  111,
-                  99,
-                  111,
-                  108
-                ]
-              }
-            ]
-          }
+          "writable": true
         },
         {
           "name": "meme",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  109,
-                  101,
-                  109,
-                  101
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "meme.symbol",
-                "account": "MemeToken"
-              }
-            ]
-          }
+          "writable": true
         },
         {
           "name": "mint",
@@ -930,6 +805,11 @@
       "code": 6019,
       "name": "Unauthorized",
       "msg": "Unauthorized"
+    },
+    {
+      "code": 6020,
+      "name": "InsufficientFunds",
+      "msg": "Insufficient funds"
     }
   ],
   "types": [
