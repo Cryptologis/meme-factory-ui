@@ -387,7 +387,7 @@ export default function TradingPanel({ tokenData, onTradeComplete }: TradingPane
           <div className="bg-muted/30 rounded-lg p-3 space-y-1 text-sm">
             <div className="flex justify-between">
               <span className="text-muted-foreground">Price per Token</span>
-              <span className="font-mono">{currentPrice.toExponential(4)} SOL</span>
+              <span className="font-mono">{currentPrice.toFixed(10)} SOL</span>
             </div>
             {buyAmount && (
               <div className="flex justify-between">
@@ -530,7 +530,7 @@ export default function TradingPanel({ tokenData, onTradeComplete }: TradingPane
           <div className="bg-muted/30 rounded-lg p-3 space-y-1 text-sm">
             <div className="flex justify-between">
               <span className="text-muted-foreground">Price per Token</span>
-              <span className="font-mono">{currentPrice.toExponential(4)} SOL</span>
+              <span className="font-mono">{currentPrice.toFixed(10)} SOL</span>
             </div>
             {sellAmount && (
               <div className="flex justify-between">
