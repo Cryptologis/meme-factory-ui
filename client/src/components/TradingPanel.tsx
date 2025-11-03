@@ -206,7 +206,7 @@ export default function TradingPanel({ tokenData, onTradeComplete }: TradingPane
 
         <TabsContent value="buy" className="space-y-4">
           {/* You Pay */}
-          <div className="space-y-2">
+          <div className="space-y-3">
             <div className="flex justify-between items-center">
               <label className="text-sm font-medium text-muted-foreground">You Pay</label>
               <Button variant="ghost" size="sm" className="h-6 px-2">
@@ -228,18 +228,21 @@ export default function TradingPanel({ tokenData, onTradeComplete }: TradingPane
             </div>
             
             {/* Quick Amount Buttons */}
-            <div className="flex gap-2">
-              {quickAmounts.map((amount) => (
-                <Button
-                  key={amount}
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setBuyAmount(amount.toString())}
-                  className="flex-1"
-                >
-                  {amount} SOL
-                </Button>
-              ))}
+            <div>
+              <p className="text-xs text-muted-foreground mb-2">Quick amounts:</p>
+              <div className="flex gap-2">
+                {quickAmounts.map((amount) => (
+                  <Button
+                    key={amount}
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setBuyAmount(amount.toString())}
+                    className="flex-1 h-8"
+                  >
+                    {amount}
+                  </Button>
+                ))}
+              </div>
             </div>
           </div>
 
@@ -291,7 +294,7 @@ export default function TradingPanel({ tokenData, onTradeComplete }: TradingPane
 
         <TabsContent value="sell" className="space-y-4">
           {/* You Sell */}
-          <div className="space-y-2">
+          <div className="space-y-3">
             <div className="flex justify-between items-center">
               <label className="text-sm font-medium text-muted-foreground">You Sell</label>
               <Button variant="ghost" size="sm" className="h-6 px-2">
@@ -309,6 +312,24 @@ export default function TradingPanel({ tokenData, onTradeComplete }: TradingPane
               />
               <div className="absolute right-4 top-1/2 -translate-y-1/2 font-semibold text-muted-foreground">
                 {tokenData.symbol}
+              </div>
+            </div>
+            
+            {/* Quick Amount Buttons */}
+            <div>
+              <p className="text-xs text-muted-foreground mb-2">Quick amounts (millions):</p>
+              <div className="flex gap-2">
+                {[1, 5, 10, 25].map((amount) => (
+                  <Button
+                    key={amount}
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setSellAmount((amount * 1_000_000).toString())}
+                    className="flex-1 h-8"
+                  >
+                    {amount}M
+                  </Button>
+                ))}
               </div>
             </div>
           </div>
