@@ -19,8 +19,8 @@ export default function BondingCurveProgress({
 }: BondingCurveProgressProps) {
   // Convert to numbers with correct decimals
   const currentSol = Number(virtualSolReserves.toString()) / 1e9; // SOL has 9 decimals
-  const tokensAvailable = Number(virtualTokenReserves.toString()) / 1e6; // Tokens have 6 decimals
-  const totalTokens = Number(totalSupply.toString()) / 1e6; // Tokens have 6 decimals
+  const tokensAvailableMillions = Number(virtualTokenReserves.toString()) / 1e6; // In millions
+  const totalTokensMillions = Number(totalSupply.toString()) / 1e6; // In millions
 
   // DEBUG: Log the actual values
   console.log("🔍 BondingCurve Debug:", {
@@ -28,8 +28,8 @@ export default function BondingCurveProgress({
     virtualTokenReserves: virtualTokenReserves.toString(),
     totalSupply: totalSupply.toString(),
     currentSol,
-    tokensAvailable,
-    totalTokens,
+    tokensAvailableMillions,
+    totalTokensMillions,
   });
 
   // Initial reserves for calculations
@@ -38,29 +38,34 @@ export default function BondingCurveProgress({
   
   // Calculate progress percentage (subtract initial reserves to start at 0%)
   const progressPercent = Math.max(0, Math.min(((currentSol - initialSol) / (targetSol - initialSol)) * 100, 100));
-  
-  // Calculate tokens sold
-  const tokensSold = Math.max(0, initialTokens - tokensAvailable);
-  const tokensSoldPercent = totalTokens > 0 ? (tokensSold / totalTokens) * 100 : 0;
-  
-  // Calculate current price using bonding curve formula
-  // Price = SOL reserves / Token reserves
-  const pricePerToken = tokensAvailable > 0 ? currentSol / tokensAvailable : 0;
 
-  // Calculate liquidity (Total Value Locked in the pool)
-  // Liquidity = SOL reserves + (Token reserves * price)
-  const liquiditySOL = currentSol + (tokensAvailable * pricePerToken);
+  // Calculate tokens sold (in millions)
+  const tokensSoldMillions = Math.max(0, initialTokens - tokensAvailableMillions);
+  const tokensSoldPercent = totalTokensMillions > 0 ? (tokensSoldMillions / totalTokensMillions) * 100 : 0;
+
+  // Calculate current price per single token
+  // tokensAvailableMillions is in millions, so price formula gives SOL per million tokens
+  // Divide by 1e6 to get price per single token
+  const pricePerMillionTokens = tokensAvailableMillions > 0 ? currentSol / tokensAvailableMillions : 0;
+  const pricePerToken = pricePerMillionTokens / 1e6; // Convert to per single token
+
+  // Calculate liquidity (Total Value Locked)
+  // For bonding curves, TVL is typically just the SOL collected (real liquidity)
+  // The virtual token reserves are not real assets
+  const liquiditySOL = currentSol;
 
   console.log("💰 Price & Liquidity Calculation:", {
     currentSol,
-    tokensAvailable,
+    tokensAvailableMillions,
+    pricePerMillionTokens,
     pricePerToken,
     liquiditySOL,
     priceInUSD: pricePerToken * 150,
   });
 
-  // Calculate market cap: total supply * current price
-  const marketCapSOL = totalTokens * pricePerToken;
+  // Calculate market cap: total supply (in actual tokens) * price per token
+  const totalTokensActual = totalTokensMillions * 1e6; // Convert millions to actual count
+  const marketCapSOL = totalTokensActual * pricePerToken;
   
   // For USD conversion
   const solPriceUSD = 150;
@@ -115,14 +120,14 @@ export default function BondingCurveProgress({
 
           <div className="p-3 bg-muted/50 rounded-lg">
             <div className="text-xs text-muted-foreground mb-1">Price per Token</div>
-            <div className="text-lg font-bold">${(pricePerToken * solPriceUSD).toFixed(6)}</div>
-            <div className="text-xs text-muted-foreground">{pricePerToken.toFixed(9)} SOL</div>
+            <div className="text-lg font-bold">${(pricePerToken * solPriceUSD).toExponential(2)}</div>
+            <div className="text-xs text-muted-foreground">{pricePerToken.toExponential(4)} SOL</div>
           </div>
 
           <div className="p-3 bg-muted/50 rounded-lg">
             <div className="text-xs text-muted-foreground mb-1">Tokens Sold</div>
             <div className="text-lg font-bold">{tokensSoldPercent.toFixed(1)}%</div>
-            <div className="text-xs text-muted-foreground">{tokensSold.toFixed(2)}M</div>
+            <div className="text-xs text-muted-foreground">{tokensSoldMillions.toFixed(2)}M</div>
           </div>
         </div>
 
