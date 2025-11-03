@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Search, RefreshCw, ExternalLink } from "lucide-react";
 import TradingPanel from "@/components/TradingPanel";
 import BondingCurveProgress from "@/components/BondingCurveProgress";
+import PriceChart from "@/components/PriceChart";
 import { useProgram } from "@/hooks/useProgram";
 import { PublicKey } from "@solana/web3.js";
 import { toast } from "@/hooks/use-toast";
@@ -199,17 +200,9 @@ export default function TradePage() {
               />
             </div>
 
-            {/* Right Column - Chart (Placeholder) */}
+            {/* Right Column - Chart */}
             <div className="space-y-6">
-              <Card className="p-6 h-[600px] flex items-center justify-center bg-muted/20">
-                <div className="text-center space-y-4">
-                  <div className="text-6xl">📈</div>
-                  <h3 className="text-xl font-bold">Price Chart Coming Soon</h3>
-                  <p className="text-muted-foreground">
-                    Real-time bonding curve visualization and price history
-                  </p>
-                </div>
-              </Card>
+              <PriceChart tokenData={selectedToken} />
             </div>
           </div>
         )}

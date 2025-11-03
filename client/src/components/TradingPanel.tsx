@@ -3,10 +3,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
-import { TrendingUp, TrendingDown, ArrowDown, Settings } from "lucide-react";
+import { TrendingUp, TrendingDown, ArrowDown } from "lucide-react";
 import { useBuyTokens } from "@/hooks/useBuyTokens";
 import { useSellTokens } from "@/hooks/useSellTokens";
 import { useWallet } from "@/hooks/useWallet";
+import { useTokenBalance } from "@/hooks/useTokenBalance";
+import TradingSettings from "@/components/TradingSettings";
 import { toast } from "@/hooks/use-toast";
 
 interface TradingPanelProps {
@@ -26,12 +28,25 @@ export default function TradingPanel({ tokenData, onTradeComplete }: TradingPane
   const { publicKey } = useWallet();
   const { buyTokens, loading: buyLoading } = useBuyTokens();
   const { sellTokens, loading: sellLoading } = useSellTokens();
-  
+  const { balance: tokenBalance, refetch: refetchBalance } = useTokenBalance({
+    mintAddress: tokenData.mint,
+    enabled: !!publicKey
+  });
+
   const [buyAmount, setBuyAmount] = useState("");
   const [sellAmount, setSellAmount] = useState("");
   const [estimatedTokens, setEstimatedTokens] = useState<number>(0);
   const [estimatedSol, setEstimatedSol] = useState<number>(0);
   const [currentPrice, setCurrentPrice] = useState<number>(0);
+  const [buyPriceImpact, setBuyPriceImpact] = useState<number>(0);
+  const [sellPriceImpact, setSellPriceImpact] = useState<number>(0);
+
+  // Trading settings
+  const [slippageTolerance, setSlippageTolerance] = useState<number>(1.0); // Default 1%
+  const [priorityFee, setPriorityFee] = useState<number>(0);
+
+  // Convert raw token balance to readable format (divide by 1e6 for 6 decimals)
+  const readableBalance = tokenBalance / 1e6;
 
   // Calculate current price from bonding curve
   useEffect(() => {
@@ -43,40 +58,58 @@ export default function TradingPanel({ tokenData, onTradeComplete }: TradingPane
     }
   }, [tokenData]);
 
-  // Estimate tokens for buy amount
+  // Estimate tokens for buy amount and calculate price impact
   useEffect(() => {
     if (buyAmount && tokenData) {
       const solIn = parseFloat(buyAmount);
       const solReserves = Number(tokenData.virtualSolReserves.toString()) / 1e9;
       const tokenReserves = Number(tokenData.virtualTokenReserves.toString()) / 1e6;
-      
+
       // Constant product formula: x * y = k
       const k = solReserves * tokenReserves;
       const newSolReserves = solReserves + solIn;
       const newTokenReserves = k / newSolReserves;
       const tokensOut = tokenReserves - newTokenReserves;
-      
+
       setEstimatedTokens(tokensOut);
+
+      // Calculate price impact
+      // Price before: solReserves / tokenReserves
+      // Price after: newSolReserves / newTokenReserves
+      const priceBefore = solReserves / tokenReserves;
+      const priceAfter = newSolReserves / newTokenReserves;
+      const impact = ((priceAfter - priceBefore) / priceBefore) * 100;
+      setBuyPriceImpact(impact);
     } else {
       setEstimatedTokens(0);
+      setBuyPriceImpact(0);
     }
   }, [buyAmount, tokenData]);
 
-  // Estimate SOL for sell amount
+  // Estimate SOL for sell amount and calculate price impact
   useEffect(() => {
     if (sellAmount && tokenData) {
       const tokensIn = parseFloat(sellAmount) / 1e6; // Convert to millions
       const solReserves = Number(tokenData.virtualSolReserves.toString()) / 1e9;
       const tokenReserves = Number(tokenData.virtualTokenReserves.toString()) / 1e6;
-      
+
       const k = solReserves * tokenReserves;
       const newTokenReserves = tokenReserves + tokensIn;
       const newSolReserves = k / newTokenReserves;
       const solOut = solReserves - newSolReserves;
-      
+
       setEstimatedSol(solOut);
+
+      // Calculate price impact (negative for sells)
+      // Price before: solReserves / tokenReserves
+      // Price after: newSolReserves / newTokenReserves
+      const priceBefore = solReserves / tokenReserves;
+      const priceAfter = newSolReserves / newTokenReserves;
+      const impact = ((priceAfter - priceBefore) / priceBefore) * 100;
+      setSellPriceImpact(Math.abs(impact)); // Use absolute value for display
     } else {
       setEstimatedSol(0);
+      setSellPriceImpact(0);
     }
   }, [sellAmount, tokenData]);
 
@@ -124,6 +157,8 @@ export default function TradingPanel({ tokenData, onTradeComplete }: TradingPane
       });
 
       setBuyAmount("");
+      // Refetch token balance after successful purchase
+      setTimeout(() => refetchBalance(), 2000);
       if (onTradeComplete) onTradeComplete(signature);
     } catch (error: any) {
       toast({
@@ -132,6 +167,30 @@ export default function TradingPanel({ tokenData, onTradeComplete }: TradingPane
         variant: "destructive",
       });
     }
+  };
+
+  const handlePercentageSell = (percentage: number) => {
+    if (!publicKey) {
+      toast({
+        title: "Wallet Not Connected",
+        description: "Please connect your wallet to see your balance",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (tokenBalance === 0) {
+      toast({
+        title: "No Tokens",
+        description: `You don't have any ${tokenData.symbol} tokens to sell`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Calculate percentage of balance
+    const amountToSell = readableBalance * (percentage / 100);
+    setSellAmount(amountToSell.toString());
   };
 
   const handleSell = async () => {
@@ -178,6 +237,8 @@ export default function TradingPanel({ tokenData, onTradeComplete }: TradingPane
       });
 
       setSellAmount("");
+      // Refetch token balance after successful sale
+      setTimeout(() => refetchBalance(), 2000);
       if (onTradeComplete) onTradeComplete(signature);
     } catch (error: any) {
       toast({
@@ -209,9 +270,12 @@ export default function TradingPanel({ tokenData, onTradeComplete }: TradingPane
           <div className="space-y-3">
             <div className="flex justify-between items-center">
               <label className="text-sm font-medium text-muted-foreground">You Pay</label>
-              <Button variant="ghost" size="sm" className="h-6 px-2">
-                <Settings className="w-3 h-3" />
-              </Button>
+              <TradingSettings
+                slippageTolerance={slippageTolerance}
+                onSlippageChange={setSlippageTolerance}
+                priorityFee={priorityFee}
+                onPriorityFeeChange={setPriorityFee}
+              />
             </div>
             <div className="relative">
               <Input
@@ -288,10 +352,28 @@ export default function TradingPanel({ tokenData, onTradeComplete }: TradingPane
             {buyAmount && (
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Price Impact</span>
-                <span className="font-mono text-yellow-500">~0.5%</span>
+                <span className={`font-mono ${
+                  buyPriceImpact > 5 ? 'text-red-500' :
+                  buyPriceImpact > 1 ? 'text-yellow-500' :
+                  'text-green-500'
+                }`}>
+                  {buyPriceImpact > 0.01 ? `+${buyPriceImpact.toFixed(2)}%` : '<0.01%'}
+                </span>
               </div>
             )}
           </div>
+
+          {/* Price Impact Warning */}
+          {buyAmount && buyPriceImpact > slippageTolerance && (
+            <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3">
+              <p className="text-sm text-red-600 dark:text-red-400 font-medium">
+                ⚠️ Price impact ({buyPriceImpact.toFixed(2)}%) exceeds your slippage tolerance ({slippageTolerance}%)
+              </p>
+              <p className="text-xs text-red-600/80 dark:text-red-400/80 mt-1">
+                Transaction may fail. Consider reducing amount or increasing slippage tolerance in settings.
+              </p>
+            </div>
+          )}
 
           {/* Buy Button */}
           <Button
@@ -308,9 +390,19 @@ export default function TradingPanel({ tokenData, onTradeComplete }: TradingPane
           <div className="space-y-3">
             <div className="flex justify-between items-center">
               <label className="text-sm font-medium text-muted-foreground">You Sell</label>
-              <Button variant="ghost" size="sm" className="h-6 px-2">
-                <Settings className="w-3 h-3" />
-              </Button>
+              <div className="flex items-center gap-2">
+                {publicKey && (
+                  <span className="text-xs text-muted-foreground">
+                    Balance: {readableBalance.toFixed(2)} {tokenData.symbol}
+                  </span>
+                )}
+                <TradingSettings
+                  slippageTolerance={slippageTolerance}
+                  onSlippageChange={setSlippageTolerance}
+                  priorityFee={priorityFee}
+                  onPriorityFeeChange={setPriorityFee}
+                />
+              </div>
             </div>
             <div className="relative">
               <Input
@@ -333,12 +425,8 @@ export default function TradingPanel({ tokenData, onTradeComplete }: TradingPane
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => {
-                    toast({
-                      title: "Coming Soon",
-                      description: "Percentage-based selling will be added soon",
-                    });
-                  }}
+                  onClick={() => handlePercentageSell(25)}
+                  disabled={!publicKey || tokenBalance === 0}
                   className="h-8"
                 >
                   25%
@@ -346,12 +434,8 @@ export default function TradingPanel({ tokenData, onTradeComplete }: TradingPane
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => {
-                    toast({
-                      title: "Coming Soon",
-                      description: "Percentage-based selling will be added soon",
-                    });
-                  }}
+                  onClick={() => handlePercentageSell(50)}
+                  disabled={!publicKey || tokenBalance === 0}
                   className="h-8"
                 >
                   50%
@@ -359,12 +443,8 @@ export default function TradingPanel({ tokenData, onTradeComplete }: TradingPane
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => {
-                    toast({
-                      title: "Coming Soon",
-                      description: "Percentage-based selling will be added soon",
-                    });
-                  }}
+                  onClick={() => handlePercentageSell(75)}
+                  disabled={!publicKey || tokenBalance === 0}
                   className="h-8"
                 >
                   75%
@@ -372,13 +452,11 @@ export default function TradingPanel({ tokenData, onTradeComplete }: TradingPane
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => {
-                    setSellAmount("");
-                    document.querySelector<HTMLInputElement>('input[placeholder="0"]')?.focus();
-                  }}
-                  className="h-8 border-dashed"
+                  onClick={() => handlePercentageSell(100)}
+                  disabled={!publicKey || tokenBalance === 0}
+                  className="h-8 font-semibold"
                 >
-                  Custom
+                  MAX
                 </Button>
               </div>
             </div>
@@ -413,10 +491,28 @@ export default function TradingPanel({ tokenData, onTradeComplete }: TradingPane
             {sellAmount && (
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Price Impact</span>
-                <span className="font-mono text-yellow-500">~0.5%</span>
+                <span className={`font-mono ${
+                  sellPriceImpact > 5 ? 'text-red-500' :
+                  sellPriceImpact > 1 ? 'text-yellow-500' :
+                  'text-green-500'
+                }`}>
+                  {sellPriceImpact > 0.01 ? `-${sellPriceImpact.toFixed(2)}%` : '<0.01%'}
+                </span>
               </div>
             )}
           </div>
+
+          {/* Price Impact Warning */}
+          {sellAmount && sellPriceImpact > slippageTolerance && (
+            <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3">
+              <p className="text-sm text-red-600 dark:text-red-400 font-medium">
+                ⚠️ Price impact ({sellPriceImpact.toFixed(2)}%) exceeds your slippage tolerance ({slippageTolerance}%)
+              </p>
+              <p className="text-xs text-red-600/80 dark:text-red-400/80 mt-1">
+                Transaction may fail. Consider reducing amount or increasing slippage tolerance in settings.
+              </p>
+            </div>
+          )}
 
           {/* Sell Button */}
           <Button
