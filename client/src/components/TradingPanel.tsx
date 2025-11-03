@@ -95,7 +95,7 @@ export default function TradingPanel({ tokenData, onTradeComplete }: TradingPane
   // Estimate SOL for sell amount and calculate price impact
   useEffect(() => {
     if (sellAmount && tokenData) {
-      const tokensIn = parseFloat(sellAmount); // Already in millions
+      const tokensIn = parseFloat(sellAmount) * 1e6; // Convert millions to actual tokens
       const solReserves = Number(tokenData.virtualSolReserves.toString()) / 1e9;
       const tokenReserves = Number(tokenData.virtualTokenReserves.toString()) / 1e6;
 
@@ -395,9 +395,7 @@ export default function TradingPanel({ tokenData, onTradeComplete }: TradingPane
                   buyPriceImpact > 5 ? 'text-red-500' :
                   buyPriceImpact > 1 ? 'text-yellow-500' :
                   'text-green-500'
-                }`}>
-                  {buyPriceImpact > 0.01 ? `+${buyPriceImpact.toFixed(2)}%` : '<0.01%'}
-                </span>
+                }`}>{buyPriceImpact > 0.01 ? `+${buyPriceImpact.toFixed(2)}%` : '<0.01%'}</span>
               </div>
             )}
           </div>
@@ -540,9 +538,7 @@ export default function TradingPanel({ tokenData, onTradeComplete }: TradingPane
                   sellPriceImpact > 5 ? 'text-red-500' :
                   sellPriceImpact > 1 ? 'text-yellow-500' :
                   'text-green-500'
-                }`}>
-                  {sellPriceImpact > 0.01 ? `-${sellPriceImpact.toFixed(2)}%` : '<0.01%'}
-                </span>
+                }`}>{sellPriceImpact > 0.01 ? `-${sellPriceImpact.toFixed(2)}%` : '<0.01%'}</span>
               </div>
             )}
           </div>
