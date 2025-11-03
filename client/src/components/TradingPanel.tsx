@@ -95,10 +95,24 @@ export default function TradingPanel({ tokenData, onTradeComplete }: TradingPane
       const solReserves = Number(tokenData.virtualSolReserves.toString()) / 1e9;
       const tokenReserves = Number(tokenData.virtualTokenReserves.toString()) / 1e6;
 
+      console.log("🔢 Sell Calculation Debug:", {
+        sellAmount,
+        tokensIn,
+        solReserves,
+        tokenReserves,
+      });
+
       const k = solReserves * tokenReserves;
       const newTokenReserves = tokenReserves + tokensIn;
       const newSolReserves = k / newTokenReserves;
       const solOut = solReserves - newSolReserves;
+
+      console.log("💰 SOL Output:", {
+        k,
+        newTokenReserves,
+        newSolReserves,
+        solOut,
+      });
 
       setEstimatedSol(solOut);
 
@@ -478,7 +492,11 @@ export default function TradingPanel({ tokenData, onTradeComplete }: TradingPane
             <div className="relative">
               <div className="bg-muted/50 border rounded-lg h-16 px-4 flex items-center justify-between">
                 <span className="text-2xl font-bold">
-                  {estimatedSol > 0 ? `~${estimatedSol.toFixed(4)}` : "0"}
+                  {estimatedSol > 0 ? (
+                    estimatedSol >= 0.0001
+                      ? `~${estimatedSol.toFixed(4)}`
+                      : `~${estimatedSol.toExponential(2)}`
+                  ) : "0"}
                 </span>
                 <span className="font-semibold text-muted-foreground">SOL</span>
               </div>
