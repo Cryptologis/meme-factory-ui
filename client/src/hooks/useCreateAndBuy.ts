@@ -6,7 +6,7 @@ import {
   getAssociatedTokenAddress,
 } from "@solana/spl-token";
 import { Program, AnchorProvider, BN } from "@coral-xyz/anchor";
-import { useState, useRef } from "react";
+import { useState } from "react";
 import idl from "../lib/meme_chain.json";
 import { PROGRAM_ID } from "../lib/constants";
 import {
@@ -30,7 +30,6 @@ export function useCreateAndBuy() {
   const wallet = useWallet();
   const [isCreating, setIsCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const lastTxRef = useRef<string | null>(null);
 
   const createAndBuy = async (params: CreateAndBuyParams): Promise<string> => {
     if (!wallet.publicKey || !wallet.signTransaction) {
@@ -39,8 +38,6 @@ export function useCreateAndBuy() {
 
     setIsCreating(true);
     setError(null);
-
-    let txSignature: string | null = null;
 
     try {
       const provider = new AnchorProvider(connection, wallet as any, {
@@ -82,33 +79,38 @@ export function useCreateAndBuy() {
       console.log("📍 Meme PDA:", memePda.toString());
       console.log("🪙 Mint PDA:", mintPda.toString());
 
-      // Call create_meme_token and capture signature immediately
+      // Build the transaction instruction
+      const txBuilder = program.methods
+        .createMemeToken(
+          params.name,
+          params.symbol,
+          params.uri,
+          imageHashArray,
+          initialVirtualSolReserves,
+          initialVirtualTokenReserves
+        )
+        .accounts({
+          protocol: protocolPda,
+          meme: memePda,
+          mint: mintPda,
+          creator: wallet.publicKey,
+          creatorTokenAccount: creatorTokenAccount,
+          tokenProgram: TOKEN_PROGRAM_ID,
+          associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+          systemProgram: SystemProgram.programId,
+          rent: new PublicKey("SysvarRent111111111111111111111111111111111"),
+        });
+
+      // Send and get signature immediately
+      let txSignature: string;
+      
       try {
-        txSignature = await program.methods
-          .createMemeToken(
-            params.name,
-            params.symbol,
-            params.uri,
-            imageHashArray,
-            initialVirtualSolReserves,
-            initialVirtualTokenReserves
-          )
-          .accounts({
-            protocol: protocolPda,
-            meme: memePda,
-            mint: mintPda,
-            creator: wallet.publicKey,
-            creatorTokenAccount: creatorTokenAccount,
-            tokenProgram: TOKEN_PROGRAM_ID,
-            associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
-            systemProgram: SystemProgram.programId,
-            rent: new PublicKey("SysvarRent111111111111111111111111111111111"),
-          })
-          .rpc({ skipPreflight: false });
-
-        // Store the signature immediately
-        lastTxRef.current = txSignature;
-
+        // Use sendAndConfirm to get signature even on confirmation errors
+        txSignature = await txBuilder.rpc({ 
+          skipPreflight: false,
+          commitment: "confirmed",
+        });
+        
         console.log("✅ Token created successfully!");
         console.log("📝 Transaction:", txSignature);
         console.log("🔗 Explorer:", `https://explorer.solana.com/tx/${txSignature}?cluster=devnet`);
@@ -116,48 +118,71 @@ export function useCreateAndBuy() {
         return txSignature;
 
       } catch (rpcError: any) {
-        // If we get "already processed" error, the transaction likely succeeded
-        if (rpcError.message?.includes("already been processed")) {
-          console.log("⚠️ Transaction already processed - likely succeeded");
-          
-          // Try to extract signature from error
-          const sig = rpcError.signature || lastTxRef.current;
-          
-          if (sig) {
-            console.log("✅ Using signature from error:", sig);
-            console.log("🔗 Explorer:", `https://explorer.solana.com/tx/${sig}?cluster=devnet`);
-            return sig;
+        console.log("⚠️ RPC Error caught:", rpcError);
+        console.log("Error keys:", Object.keys(rpcError));
+        
+        // Try multiple ways to extract the signature
+        let extractedSig = null;
+        
+        // Method 1: Direct signature property
+        if (rpcError.signature) {
+          extractedSig = rpcError.signature;
+          console.log("Found signature in error.signature:", extractedSig);
+        }
+        
+        // Method 2: txId property
+        if (!extractedSig && rpcError.txId) {
+          extractedSig = rpcError.txId;
+          console.log("Found signature in error.txId:", extractedSig);
+        }
+        
+        // Method 3: Parse from error message
+        if (!extractedSig && rpcError.message) {
+          const sigMatch = rpcError.message.match(/signature[:\s]+([A-Za-z0-9]{87,88})/i);
+          if (sigMatch) {
+            extractedSig = sigMatch[1];
+            console.log("Found signature in error message:", extractedSig);
           }
         }
         
-        // Re-throw if we can't handle it
+        // Method 4: Check if error has logs with signature
+        if (!extractedSig && rpcError.logs) {
+          console.log("Error has logs:", rpcError.logs);
+        }
+
+        // If transaction was already processed, it succeeded!
+        if (rpcError.message?.includes("already been processed") || 
+            rpcError.message?.includes("This transaction has already been processed")) {
+          console.log("⚠️ Transaction already processed - token created successfully!");
+          
+          if (extractedSig) {
+            console.log("✅ Returning extracted signature:", extractedSig);
+            console.log("🔗 Explorer:", `https://explorer.solana.com/tx/${extractedSig}?cluster=devnet`);
+            return extractedSig;
+          } else {
+            // Query recent signatures from our wallet
+            console.log("🔍 Attempting to find recent transaction...");
+            const signatures = await connection.getSignaturesForAddress(wallet.publicKey, { limit: 5 });
+            if (signatures && signatures.length > 0) {
+              const latestSig = signatures[0].signature;
+              console.log("✅ Found recent signature:", latestSig);
+              console.log("🔗 Explorer:", `https://explorer.solana.com/tx/${latestSig}?cluster=devnet`);
+              return latestSig;
+            }
+          }
+        }
+        
+        // Re-throw if we couldn't handle it
         throw rpcError;
       }
       
     } catch (err: any) {
       console.error("❌ Create token error:", err);
       
-      // If we have a signature, return it even on error
-      if (txSignature || lastTxRef.current) {
-        const sig = txSignature || lastTxRef.current;
-        console.log("⚠️ Error occurred but transaction was sent:", sig);
-        console.log("🔗 Verify on explorer:", `https://explorer.solana.com/tx/${sig}?cluster=devnet`);
-        return sig!;
-      }
+      const errorMessage = err.message || "Failed to create token";
+      setError(errorMessage);
+      throw new Error(errorMessage);
       
-      // Handle specific errors
-      if (err.message?.includes("LaunchCooldownActive")) {
-        setError("Token created but cooldown active. Wait 60 seconds before buying.");
-        throw new Error("Token created successfully! Wait 60 seconds before buying.");
-      }
-      
-      if (err.message?.includes("Simulation failed")) {
-        setError("Transaction simulation failed. Check console for details.");
-      } else {
-        setError(err.message || "Failed to create token");
-      }
-      
-      throw err;
     } finally {
       setIsCreating(false);
     }
