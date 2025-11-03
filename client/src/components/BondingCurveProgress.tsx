@@ -120,8 +120,8 @@ export default function BondingCurveProgress({
 
           <div className="p-3 bg-muted/50 rounded-lg">
             <div className="text-xs text-muted-foreground mb-1">Price per Token</div>
-            <div className="text-lg font-bold">${(pricePerToken * solPriceUSD).toExponential(2)}</div>
-            <div className="text-xs text-muted-foreground">{pricePerToken.toExponential(4)} SOL</div>
+            <div className="text-lg font-bold">${(pricePerToken * solPriceUSD).toFixed(8)}</div>
+            <div className="text-xs text-muted-foreground">{pricePerToken.toFixed(10)} SOL</div>
           </div>
 
           <div className="p-3 bg-muted/50 rounded-lg">
