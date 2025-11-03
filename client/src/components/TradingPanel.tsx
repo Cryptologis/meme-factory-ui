@@ -395,9 +395,7 @@ export default function TradingPanel({ tokenData, onTradeComplete }: TradingPane
                   buyPriceImpact > 5 ? 'text-red-500' :
                   buyPriceImpact > 1 ? 'text-yellow-500' :
                   'text-green-500'
-                }`}>
-                  {buyPriceImpact > 0.01 ? `+${buyPriceImpact.toFixed(2)}%` : '<0.01%'}
-                </span>
+                }`}>{buyPriceImpact > 0.01 ? `+${buyPriceImpact.toFixed(2)}%` : '<0.01%'}</span>
               </div>
             )}
           </div>
@@ -540,9 +538,7 @@ export default function TradingPanel({ tokenData, onTradeComplete }: TradingPane
                   sellPriceImpact > 5 ? 'text-red-500' :
                   sellPriceImpact > 1 ? 'text-yellow-500' :
                   'text-green-500'
-                }`}>
-                  {sellPriceImpact > 0.01 ? `-${sellPriceImpact.toFixed(2)}%` : '<0.01%'}
-                </span>
+                }`}>{sellPriceImpact > 0.01 ? `-${sellPriceImpact.toFixed(2)}%` : '<0.01%'}</span>
               </div>
             )}
           </div>
