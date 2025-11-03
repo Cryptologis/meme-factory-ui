@@ -1,7 +1,7 @@
 import { PublicKey } from '@solana/web3.js';
 
 // Program ID from deployed Rust program
-export const PROGRAM_ID = new PublicKey('3HNNR5wUZxPpFUDfmHA9UEfDagN1i8bxMjtm8Hea5yPf');
+export const PROGRAM_ID = new PublicKey('JDmuP2KvxCfRi1biCd3LKJAuycx5pBuHF6WYVf9sGL7M');
 
 // Using the Triton One RPC for devnet
 export const DEVNET_ENDPOINT = 'https://pit129.nodes.rpcpool.com';

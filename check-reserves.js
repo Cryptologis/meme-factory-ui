@@ -3,7 +3,7 @@ import { Program, AnchorProvider } from '@coral-xyz/anchor';
 import idl from './client/src/lib/meme_chain.json' assert { type: 'json' };
 
 const connection = new Connection('https://api.devnet.solana.com');
-const programId = new PublicKey('5mE8RwFEnMJ1Rs4bLM2VSrzMN8RSEJkf1vXb9VpAybvi');
+const programId = new PublicKey('JDmuP2KvxCfRi1biCd3LKJAuycx5pBuHF6WYVf9sGL7M');
 
 // Get protocol PDA
 const [protocolPda] = PublicKey.findProgramAddressSync(
