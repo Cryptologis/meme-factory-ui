@@ -89,7 +89,7 @@ export default function TradingPanel({ tokenData, onTradeComplete }: TradingPane
   // Estimate SOL for sell amount and calculate price impact
   useEffect(() => {
     if (sellAmount && tokenData) {
-      const tokensIn = parseFloat(sellAmount) / 1e6; // Convert to millions
+      const tokensIn = parseFloat(sellAmount); // Already in millions (same unit as tokenReserves)
       const solReserves = Number(tokenData.virtualSolReserves.toString()) / 1e9;
       const tokenReserves = Number(tokenData.virtualTokenReserves.toString()) / 1e6;
 
@@ -393,7 +393,7 @@ export default function TradingPanel({ tokenData, onTradeComplete }: TradingPane
               <div className="flex items-center gap-2">
                 {publicKey && (
                   <span className="text-xs text-muted-foreground">
-                    Balance: {readableBalance.toFixed(2)} {tokenData.symbol}
+                    Balance: {readableBalance.toFixed(2)}M {tokenData.symbol}
                   </span>
                 )}
                 <TradingSettings
@@ -411,10 +411,12 @@ export default function TradingPanel({ tokenData, onTradeComplete }: TradingPane
                 value={sellAmount}
                 onChange={(e) => setSellAmount(e.target.value)}
                 className="text-2xl font-bold h-16 pr-24"
-                step="100000"
+                step="0.1"
+                min="0"
               />
-              <div className="absolute right-4 top-1/2 -translate-y-1/2 font-semibold text-muted-foreground">
-                {tokenData.symbol}
+              <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-baseline gap-1">
+                <span className="font-semibold text-muted-foreground">{tokenData.symbol}</span>
+                <span className="text-xs text-muted-foreground">(Millions)</span>
               </div>
             </div>
             
