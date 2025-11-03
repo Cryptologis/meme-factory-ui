@@ -186,6 +186,12 @@ export default function TradingPanel({ tokenData, onTradeComplete }: TradingPane
   };
 
   const handlePercentageSell = (percentage: number) => {
+    console.log("🔘 Percentage button clicked:", percentage, {
+      publicKey: publicKey?.toString(),
+      tokenBalance,
+      balanceInTokens,
+    });
+
     if (!publicKey) {
       toast({
         title: "Wallet Not Connected",
@@ -206,6 +212,7 @@ export default function TradingPanel({ tokenData, onTradeComplete }: TradingPane
 
     // Calculate percentage of balance (in tokens, not millions)
     const amountToSell = balanceInTokens * (percentage / 100);
+    console.log("✅ Setting sell amount:", amountToSell);
     setSellAmount(amountToSell.toString());
   };
 
