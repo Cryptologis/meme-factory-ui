@@ -230,18 +230,29 @@ export default function TradingPanel({ tokenData, onTradeComplete }: TradingPane
             {/* Quick Amount Buttons */}
             <div>
               <p className="text-xs text-muted-foreground mb-2">Quick amounts or enter custom:</p>
-              <div className="flex gap-2">
+              <div className="grid grid-cols-4 gap-2">
                 {quickAmounts.map((amount) => (
                   <Button
                     key={amount}
                     variant="outline"
                     size="sm"
                     onClick={() => setBuyAmount(amount.toString())}
-                    className="flex-1 h-8"
+                    className="h-8"
                   >
                     {amount}
                   </Button>
                 ))}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setBuyAmount("");
+                    document.querySelector<HTMLInputElement>('input[placeholder="0.0"]')?.focus();
+                  }}
+                  className="h-8 border-dashed"
+                >
+                  Custom
+                </Button>
               </div>
             </div>
           </div>
@@ -318,7 +329,7 @@ export default function TradingPanel({ tokenData, onTradeComplete }: TradingPane
             {/* Sell Percentage Buttons */}
             <div>
               <p className="text-xs text-muted-foreground mb-2">Sell percentage or enter custom:</p>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-4 gap-2">
                 <Button
                   variant="outline"
                   size="sm"
@@ -357,6 +368,17 @@ export default function TradingPanel({ tokenData, onTradeComplete }: TradingPane
                   className="h-8"
                 >
                   75%
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setSellAmount("");
+                    document.querySelector<HTMLInputElement>('input[placeholder="0"]')?.focus();
+                  }}
+                  className="h-8 border-dashed"
+                >
+                  Custom
                 </Button>
               </div>
             </div>
