@@ -5,7 +5,6 @@ import { Card } from "@/components/ui/card";
 import { Search, RefreshCw, ExternalLink } from "lucide-react";
 import TradingPanel from "@/components/TradingPanel";
 import BondingCurveProgress from "@/components/BondingCurveProgress";
-import PriceChart from "@/components/PriceChart";
 import { useProgram } from "@/hooks/useProgram";
 import { PublicKey } from "@solana/web3.js";
 import { toast } from "@/hooks/use-toast";
@@ -142,68 +141,60 @@ export default function TradePage() {
         )}
 
         {selectedToken && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Left Column - Trading */}
-            <div className="space-y-6">
-              {/* Token Info Card */}
-              <Card className="p-6">
-                <div className="flex justify-between items-start mb-4">
-                  <div className="flex-1">
-                    <h2 className="text-2xl font-bold mb-1">{selectedToken.name}</h2>
-                    <p className="text-muted-foreground mb-2">{selectedToken.symbol}</p>
-                    <div className="text-xs font-mono text-muted-foreground space-y-1">
-                      <p>Token CA: {selectedToken.mint}</p>
-                      <p>Meme PDA: {selectedToken.pda}</p>
-                    </div>
-                  </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => searchTokenByAddress(selectedToken.pda)}
-                    disabled={loading}
-                    title="Refresh token data from blockchain"
-                    className="ml-4"
-                  >
-                    <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-                    Refresh
-                  </Button>
-                </div>
-                
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div className="p-3 bg-muted/50 rounded-lg">
-                    <p className="text-muted-foreground mb-1">Virtual SOL</p>
-                    <p className="font-mono font-semibold">
-                      {(Number(selectedToken.virtualSolReserves.toString()) / 1e9).toFixed(2)} SOL
-                    </p>
-                  </div>
-                  <div className="p-3 bg-muted/50 rounded-lg">
-                    <p className="text-muted-foreground mb-1">Virtual Tokens</p>
-                    <p className="font-mono font-semibold">
-                      {(Number(selectedToken.virtualTokenReserves.toString()) / 1e6).toFixed(0)}K
-                    </p>
+          <div className="max-w-4xl mx-auto space-y-6">
+            {/* Token Info Card */}
+            <Card className="p-6">
+              <div className="flex justify-between items-start mb-4">
+                <div className="flex-1">
+                  <h2 className="text-2xl font-bold mb-1">{selectedToken.name}</h2>
+                  <p className="text-muted-foreground mb-2">{selectedToken.symbol}</p>
+                  <div className="text-xs font-mono text-muted-foreground space-y-1">
+                    <p>Token CA: {selectedToken.mint}</p>
+                    <p>Meme PDA: {selectedToken.pda}</p>
                   </div>
                 </div>
-              </Card>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => searchTokenByAddress(selectedToken.pda)}
+                  disabled={loading}
+                  title="Refresh token data from blockchain"
+                  className="ml-4"
+                >
+                  <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+                  Refresh
+                </Button>
+              </div>
 
-              {/* Bonding Curve Progress */}
-              <BondingCurveProgress
-                virtualSolReserves={selectedToken.virtualSolReserves}
-                virtualTokenReserves={selectedToken.virtualTokenReserves}
-                totalSupply={selectedToken.totalSupply}
-                targetSol={85}
-              />
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div className="p-3 bg-muted/50 rounded-lg">
+                  <p className="text-muted-foreground mb-1">Virtual SOL</p>
+                  <p className="font-mono font-semibold">
+                    {(Number(selectedToken.virtualSolReserves.toString()) / 1e9).toFixed(2)} SOL
+                  </p>
+                </div>
+                <div className="p-3 bg-muted/50 rounded-lg">
+                  <p className="text-muted-foreground mb-1">Virtual Tokens</p>
+                  <p className="font-mono font-semibold">
+                    {(Number(selectedToken.virtualTokenReserves.toString()) / 1e6).toFixed(0)}K
+                  </p>
+                </div>
+              </div>
+            </Card>
 
-              {/* Trading Panel */}
-              <TradingPanel 
-                tokenData={selectedToken}
-                onTradeComplete={handleTradeComplete}
-              />
-            </div>
+            {/* Bonding Curve Progress */}
+            <BondingCurveProgress
+              virtualSolReserves={selectedToken.virtualSolReserves}
+              virtualTokenReserves={selectedToken.virtualTokenReserves}
+              totalSupply={selectedToken.totalSupply}
+              targetSol={85}
+            />
 
-            {/* Right Column - Chart */}
-            <div className="space-y-6">
-              <PriceChart tokenData={selectedToken} />
-            </div>
+            {/* Trading Panel */}
+            <TradingPanel
+              tokenData={selectedToken}
+              onTradeComplete={handleTradeComplete}
+            />
           </div>
         )}
 
