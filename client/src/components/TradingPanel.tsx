@@ -45,8 +45,14 @@ export default function TradingPanel({ tokenData, onTradeComplete }: TradingPane
   const [slippageTolerance, setSlippageTolerance] = useState<number>(1.0); // Default 1%
   const [priorityFee, setPriorityFee] = useState<number>(0);
 
-  // Convert raw token balance to millions (divide by 1e12 total: 1e6 decimals + 1e6 for millions)
-  const balanceInMillions = tokenBalance / 1e12;
+  // Convert raw token balance for display
+  const balanceInTokens = tokenBalance / 1e6; // Actual tokens
+  const balanceInMillions = tokenBalance / 1e12; // In millions
+
+  // Smart display: show tokens if < 1M, otherwise show millions
+  const balanceDisplay = balanceInTokens < 1000000
+    ? `${balanceInTokens.toFixed(2)} ${tokenData?.symbol || ''}`
+    : `${balanceInMillions.toFixed(4)}M ${tokenData?.symbol || ''}`;
 
   // Calculate current price from bonding curve
   useEffect(() => {
@@ -426,7 +432,7 @@ export default function TradingPanel({ tokenData, onTradeComplete }: TradingPane
               <div className="flex items-center gap-2">
                 {publicKey && (
                   <span className="text-xs text-muted-foreground">
-                    Balance: {balanceInMillions.toFixed(4)}M {tokenData.symbol}
+                    Balance: {balanceDisplay}
                   </span>
                 )}
                 <TradingSettings
