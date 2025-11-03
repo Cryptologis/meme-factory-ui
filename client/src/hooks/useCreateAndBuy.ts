@@ -108,11 +108,28 @@ export function useCreateAndBuy() {
         })
         .rpc({ skipPreflight: false });
 
-      console.log("✅ Token created successfully:", tx);
+      console.log("✅ Token created successfully!");
+      console.log("Transaction signature:", tx);
+      console.log("🔗 View on explorer:", `https://explorer.solana.com/tx/${tx}?cluster=devnet`);
       
+      // Always return the actual transaction signature
       return tx;
     } catch (err: any) {
       console.error("Create token error:", err);
+      
+      // Try to extract transaction signature from error
+      let txSignature = null;
+      
+      // Check if error has a signature property
+      if (err.signature) {
+        txSignature = err.signature;
+      }
+      
+      // Check error message for transaction signature
+      const sigMatch = err.message?.match(/Transaction signature: ([A-Za-z0-9]{87,88})/);
+      if (sigMatch) {
+        txSignature = sigMatch[1];
+      }
       
       // Handle specific cooldown error
       if (err.message && err.message.includes("LaunchCooldownActive")) {
@@ -122,13 +139,19 @@ export function useCreateAndBuy() {
           "This cooldown prevents bot sniping and ensures fair launches.\n\n" +
           "Please wait 60 seconds and try buying again.";
         setError(cooldownMessage);
+        
+        // If we have a signature, return it even with cooldown error
+        if (txSignature) {
+          console.log("Token created with cooldown. Signature:", txSignature);
+          return txSignature;
+        }
         throw new Error(cooldownMessage);
       }
       
-      // Ignore "already processed" errors since the token was created
-      if (err.message && err.message.includes("already been processed")) {
-        console.log("Transaction already processed - token created successfully");
-        return "already_processed";
+      // If transaction was already processed but we have a signature, return it
+      if (err.message && err.message.includes("already been processed") && txSignature) {
+        console.log("Transaction already processed. Signature:", txSignature);
+        return txSignature;
       }
       
       setError(err.message || "Failed to create token");
