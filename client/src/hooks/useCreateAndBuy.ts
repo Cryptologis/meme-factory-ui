@@ -19,7 +19,10 @@ export interface CreateAndBuyParams {
   symbol: string;
   uri: string;
   imageHash: number[];
-  buyAmount: number;
+  buyAmount?: number;
+  estimatedCost?: number;
+  maxSolCost?: number;
+  buyPercentage?: number;
 }
 
 export function useCreateAndBuy() {
@@ -28,7 +31,7 @@ export function useCreateAndBuy() {
   const [isCreating, setIsCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const createAndBuy = async (params: CreateAndBuyParams) => {
+  const createAndBuy = async (params: CreateAndBuyParams): Promise<string> => {
     if (!wallet.publicKey || !wallet.signTransaction) {
       throw new Error("Wallet not connected");
     }
@@ -105,13 +108,9 @@ export function useCreateAndBuy() {
         })
         .rpc({ skipPreflight: false });
 
-      console.log("Token created successfully:", tx);
+      console.log("✅ Token created successfully:", tx);
       
-      return {
-        mint: mintPda.toString(),
-        meme: memePda.toString(),
-        signature: tx,
-      };
+      return tx;
     } catch (err: any) {
       console.error("Create token error:", err);
       
@@ -129,12 +128,7 @@ export function useCreateAndBuy() {
       // Ignore "already processed" errors since the token was created
       if (err.message && err.message.includes("already been processed")) {
         console.log("Transaction already processed - token created successfully");
-        // Don't throw, just return success
-        return {
-          mint: "created",
-          meme: "created",
-          signature: "already_processed",
-        };
+        return "already_processed";
       }
       
       setError(err.message || "Failed to create token");
@@ -148,5 +142,6 @@ export function useCreateAndBuy() {
     createAndBuy,
     isCreating,
     error,
+    loading: isCreating,
   };
 }
