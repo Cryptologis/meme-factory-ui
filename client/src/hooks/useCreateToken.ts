@@ -35,11 +35,14 @@ export function useCreateToken() {
     setError(null);
 
     try {
+      console.log("=== CREATE TOKEN DEBUG ===");
+      console.log("1. Metadata:", metadata);
+      console.log("2. Initial buy:", initialBuyAmount);
+
       // Upload image to IPFS or a storage service
-      // For now, we'll use a placeholder
       const imageUrl = "https://via.placeholder.com/400";
 
-      // Create metadata URI (in production, upload to IPFS)
+      // Create metadata URI
       const uri = JSON.stringify({
         name: metadata.name,
         symbol: metadata.symbol,
@@ -56,84 +59,119 @@ export function useCreateToken() {
 
       const program = new Program(idl as any, provider);
 
-      // Generate new mint keypair
-      const mintKeypair = Keypair.generate();
-
-      // Derive PDAs
+      // Derive PDAs - FIXED to match Rust program
       const [protocolPda] = PublicKey.findProgramAddressSync(
         [Buffer.from("protocol")],
         PROGRAM_ID
       );
+      console.log("3. Protocol PDA:", protocolPda.toString());
 
-      const [bondingCurvePda] = PublicKey.findProgramAddressSync(
-        [Buffer.from("bonding-curve"), mintKeypair.publicKey.toBuffer()],
+      // Meme PDA uses [b"meme", symbol.as_bytes()] - NOT creator key!
+      const [memePda] = PublicKey.findProgramAddressSync(
+        [Buffer.from("meme"), Buffer.from(metadata.symbol)],
         PROGRAM_ID
       );
+      console.log("4. Meme PDA:", memePda.toString());
 
+      // Mint PDA
+      const [mintPda] = PublicKey.findProgramAddressSync(
+        [Buffer.from("mint"), memePda.toBuffer()],
+        PROGRAM_ID
+      );
+      console.log("5. Mint PDA:", mintPda.toString());
+
+      // Vault PDA
       const [vaultPda] = PublicKey.findProgramAddressSync(
-        [Buffer.from("vault"), bondingCurvePda.toBuffer()],
+        [Buffer.from("vault"), memePda.toBuffer()],
         PROGRAM_ID
       );
+      console.log("6. Vault PDA:", vaultPda.toString());
 
       // Get associated token accounts
       const creatorTokenAccount = await getAssociatedTokenAddress(
-        mintKeypair.publicKey,
+        mintPda,
         wallet.publicKey
       );
-
-      const buyerTokenAccount = await getAssociatedTokenAddress(
-        mintKeypair.publicKey,
-        wallet.publicKey
-      );
+      console.log("7. Creator token account:", creatorTokenAccount.toString());
 
       // Fetch protocol to get fee recipient
       const protocolAccount = await program.account.protocol.fetch(protocolPda);
+      console.log("8. Fee recipient:", protocolAccount.feeRecipient.toString());
 
-      // Create and buy in one transaction
-      const lamports = new BN(initialBuyAmount * web3.LAMPORTS_PER_SOL);
-      const minTokensOut = new BN(0); // Set slippage tolerance in production
-
-      const tx = await program.methods
-        .createAndBuy(
+      // STEP 1: Create the meme token
+      console.log("9. Creating meme token...");
+      const createTx = await program.methods
+        .createMemeToken(
           metadata.name,
           metadata.symbol,
-          uri,
-          lamports,
-          minTokensOut
+          uri
         )
         .accounts({
           protocol: protocolPda,
-          mint: mintKeypair.publicKey,
-          bondingCurve: bondingCurvePda,
+          meme: memePda,
+          mint: mintPda,
           vault: vaultPda,
           creator: wallet.publicKey,
           creatorTokenAccount: creatorTokenAccount,
-          buyer: wallet.publicKey,
-          buyerTokenAccount: buyerTokenAccount,
           feeRecipient: protocolAccount.feeRecipient,
           tokenProgram: TOKEN_PROGRAM_ID,
           associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
           systemProgram: SystemProgram.programId,
           rent: web3.SYSVAR_RENT_PUBKEY,
         })
-        .signers([mintKeypair])
         .rpc();
 
-      console.log("Token created successfully:", tx);
+      console.log("✅ Token created:", createTx);
+      console.log("🔗 View:", `https://explorer.solana.com/tx/${createTx}?cluster=devnet`);
+
+      // Wait for confirmation
+      await connection.confirmTransaction(createTx, "confirmed");
+
+      // STEP 2: Buy tokens if initial buy amount > 0
+      if (initialBuyAmount > 0) {
+        console.log("10. Buying tokens...");
+        console.log("⏱️ Waiting 5 seconds for cooldown...");
+        await new Promise(resolve => setTimeout(resolve, 5000)); // Wait 5 seconds
+
+        const buyerTokenAccount = await getAssociatedTokenAddress(
+          mintPda,
+          wallet.publicKey
+        );
+
+        const lamports = new BN(initialBuyAmount * web3.LAMPORTS_PER_SOL);
+        const minTokensOut = new BN(0);
+        const maxSlippageBps = 500;
+
+        const buyTx = await program.methods
+          .buyTokens(lamports, minTokensOut, maxSlippageBps)
+          .accounts({
+            protocol: protocolPda,
+            meme: memePda,
+            mint: mintPda,
+            buyerTokenAccount: buyerTokenAccount,
+            bondingCurveVault: vaultPda,
+            buyer: wallet.publicKey,
+            creator: wallet.publicKey,
+            feeRecipient: protocolAccount.feeRecipient,
+            tokenProgram: TOKEN_PROGRAM_ID,
+            associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+            systemProgram: SystemProgram.programId,
+          })
+          .rpc();
+
+        console.log("✅ Buy complete:", buyTx);
+        console.log("🔗 View:", `https://explorer.solana.com/tx/${buyTx}?cluster=devnet`);
+      }
+
       return {
-        mint: mintKeypair.publicKey.toString(),
-        signature: tx,
+        mint: mintPda.toString(),
+        signature: createTx,
       };
     } catch (err: any) {
-      console.error("Create token error:", err);
+      console.error("❌ Create token error:", err);
       
-      // Handle specific cooldown error
       if (err.message && err.message.includes("LaunchCooldownActive")) {
-        const cooldownMessage = "⏱️ ANTI-BOT PROTECTION ACTIVE!\n\n" +
-          "Your token was created successfully! 🎉\n\n" +
-          "However, you must wait 60 seconds after token creation before making your first purchase. " +
-          "This cooldown prevents bot sniping and ensures fair launches.\n\n" +
-          "Please wait 60 seconds and try buying again.";
+        const cooldownMessage = "⏱️ Token created! Wait 60 seconds before buying.";
         setError(cooldownMessage);
         throw new Error(cooldownMessage);
       }
