@@ -130,23 +130,8 @@ export function useCreateAndBuy() {
           console.log("Found signature in error.signature:", extractedSig);
         }
         
-        // Method 2: txId property
-        if (!extractedSig && rpcError.txId) {
-          extractedSig = rpcError.txId;
-          console.log("Found signature in error.txId:", extractedSig);
-        }
-        
-        // Method 3: Parse from error message
-        if (!extractedSig && rpcError.message) {
-          const sigMatch = rpcError.message.match(/signature[:\s]+([A-Za-z0-9]{87,88})/i);
-          if (sigMatch) {
-            extractedSig = sigMatch[1];
-            console.log("Found signature in error message:", extractedSig);
-          }
-        }
-        
-        // Method 4: Check if error has logs with signature
-        if (!extractedSig && rpcError.logs) {
+        // Method 2: Check if error has logs
+        if (rpcError.logs) {
           console.log("Error has logs:", rpcError.logs);
         }
 
@@ -156,12 +141,14 @@ export function useCreateAndBuy() {
           console.log("⚠️ Transaction already processed - token created successfully!");
           
           if (extractedSig) {
-            console.log("✅ Returning extracted signature:", extractedSig);
+            console.log("✅ Using extracted signature:", extractedSig);
             console.log("🔗 Explorer:", `https://explorer.solana.com/tx/${extractedSig}?cluster=devnet`);
             return extractedSig;
-          } else {
-            // Query recent signatures from our wallet
-            console.log("🔍 Attempting to find recent transaction...");
+          }
+          
+          // Query recent signatures from our wallet
+          console.log("🔍 Attempting to find recent transaction...");
+          try {
             const signatures = await connection.getSignaturesForAddress(wallet.publicKey, { limit: 5 });
             if (signatures && signatures.length > 0) {
               const latestSig = signatures[0].signature;
@@ -169,19 +156,22 @@ export function useCreateAndBuy() {
               console.log("🔗 Explorer:", `https://explorer.solana.com/tx/${latestSig}?cluster=devnet`);
               return latestSig;
             }
+          } catch (queryError) {
+            console.error("Failed to query recent signatures:", queryError);
           }
         }
         
-        // Re-throw if we couldn't handle it
+        // If we get here and still no signature, throw the original error
         throw rpcError;
       }
       
     } catch (err: any) {
       console.error("❌ Create token error:", err);
       
+      // Don't overwrite a successful signature extraction with an error
       const errorMessage = err.message || "Failed to create token";
       setError(errorMessage);
-      throw new Error(errorMessage);
+      throw err;
       
     } finally {
       setIsCreating(false);
