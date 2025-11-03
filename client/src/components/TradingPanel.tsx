@@ -45,8 +45,10 @@ export default function TradingPanel({ tokenData, onTradeComplete }: TradingPane
   const [slippageTolerance, setSlippageTolerance] = useState<number>(1.0); // Default 1%
   const [priorityFee, setPriorityFee] = useState<number>(0);
 
-  // Convert raw token balance to readable format (divide by 1e6 for 6 decimals)
-  const readableBalance = tokenBalance / 1e6;
+  // Convert raw token balance to actual tokens (divide by 1e6 for 6 decimals)
+  // Then convert to millions for display
+  const balanceInTokens = tokenBalance / 1e6; // Actual token amount
+  const balanceInMillions = balanceInTokens / 1e6; // For millions display
 
   // Calculate current price from bonding curve
   useEffect(() => {
@@ -89,7 +91,7 @@ export default function TradingPanel({ tokenData, onTradeComplete }: TradingPane
   // Estimate SOL for sell amount and calculate price impact
   useEffect(() => {
     if (sellAmount && tokenData) {
-      const tokensIn = parseFloat(sellAmount) / 1e6; // Convert to millions
+      const tokensIn = parseFloat(sellAmount) / 1e6; // Convert from tokens to millions
       const solReserves = Number(tokenData.virtualSolReserves.toString()) / 1e9;
       const tokenReserves = Number(tokenData.virtualTokenReserves.toString()) / 1e6;
 
@@ -188,8 +190,8 @@ export default function TradingPanel({ tokenData, onTradeComplete }: TradingPane
       return;
     }
 
-    // Calculate percentage of balance
-    const amountToSell = readableBalance * (percentage / 100);
+    // Calculate percentage of balance (in tokens, not millions)
+    const amountToSell = balanceInTokens * (percentage / 100);
     setSellAmount(amountToSell.toString());
   };
 
@@ -393,7 +395,7 @@ export default function TradingPanel({ tokenData, onTradeComplete }: TradingPane
               <div className="flex items-center gap-2">
                 {publicKey && (
                   <span className="text-xs text-muted-foreground">
-                    Balance: {readableBalance.toFixed(2)} {tokenData.symbol}
+                    Balance: {balanceInTokens.toLocaleString()} {tokenData.symbol}
                   </span>
                 )}
                 <TradingSettings
@@ -411,7 +413,8 @@ export default function TradingPanel({ tokenData, onTradeComplete }: TradingPane
                 value={sellAmount}
                 onChange={(e) => setSellAmount(e.target.value)}
                 className="text-2xl font-bold h-16 pr-24"
-                step="100000"
+                step="0.1"
+                min="0"
               />
               <div className="absolute right-4 top-1/2 -translate-y-1/2 font-semibold text-muted-foreground">
                 {tokenData.symbol}

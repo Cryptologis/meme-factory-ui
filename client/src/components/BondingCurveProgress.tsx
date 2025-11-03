@@ -19,9 +19,9 @@ export default function BondingCurveProgress({
 }: BondingCurveProgressProps) {
   // Convert to numbers with correct decimals
   const currentSol = Number(virtualSolReserves.toString()) / 1e9; // SOL has 9 decimals
-  const tokensAvailable = Number(virtualTokenReserves.toString()); // Raw value from chain
-  const totalTokens = Number(totalSupply.toString()); // Raw value from chain
-  
+  const tokensAvailable = Number(virtualTokenReserves.toString()) / 1e6; // Tokens have 6 decimals
+  const totalTokens = Number(totalSupply.toString()) / 1e6; // Tokens have 6 decimals
+
   // DEBUG: Log the actual values
   console.log("🔍 BondingCurve Debug:", {
     virtualSolReserves: virtualSolReserves.toString(),
@@ -31,10 +31,10 @@ export default function BondingCurveProgress({
     tokensAvailable,
     totalTokens,
   });
-  
+
   // Initial reserves for calculations
   const initialSol = Number(VIRTUAL_SOL_RESERVES.toString()) / 1e9;
-  const initialTokens = Number(VIRTUAL_TOKEN_RESERVES.toString());
+  const initialTokens = Number(VIRTUAL_TOKEN_RESERVES.toString()) / 1e6; // Also convert to millions
   
   // Calculate progress percentage (subtract initial reserves to start at 0%)
   const progressPercent = Math.max(0, Math.min(((currentSol - initialSol) / (targetSol - initialSol)) * 100, 100));
@@ -112,12 +112,12 @@ export default function BondingCurveProgress({
           <div className="p-3 bg-muted/50 rounded-lg">
             <div className="text-xs text-muted-foreground mb-1">Tokens Sold</div>
             <div className="text-lg font-bold">{tokensSoldPercent.toFixed(1)}%</div>
-            <div className="text-xs text-muted-foreground">{(tokensSold / 1e6).toFixed(2)}M</div>
+            <div className="text-xs text-muted-foreground">{tokensSold.toFixed(2)}M</div>
           </div>
 
           <div className="p-3 bg-muted/50 rounded-lg">
             <div className="text-xs text-muted-foreground mb-1">Available</div>
-            <div className="text-lg font-bold">{(tokensAvailable / 1e6).toFixed(2)}M</div>
+            <div className="text-lg font-bold">{tokensAvailable.toFixed(2)}M</div>
             <div className="text-xs text-muted-foreground">{((tokensAvailable / totalTokens) * 100).toFixed(1)}%</div>
           </div>
         </div>
