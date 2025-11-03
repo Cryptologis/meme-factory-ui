@@ -4,7 +4,7 @@ import MemeChainIDL from "./meme_chain.json";
 
 // Updated to match the deployed devnet program
 export const PROGRAM_ID = new PublicKey(
-  "3HNNR5wUZxPpFUDfmHA9UEfDagN1i8bxMjtm8Hea5yPf"
+  "JDmuP2KvxCfRi1biCd3LKJAuycx5pBuHF6WYVf9sGL7M"
 );
 
 export const PROGRAM_IDL = MemeChainIDL as Idl;
