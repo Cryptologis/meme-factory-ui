@@ -58,8 +58,11 @@ export default function TradingPanel({ tokenData, onTradeComplete }: TradingPane
   useEffect(() => {
     if (tokenData) {
       const solReserves = Number(tokenData.virtualSolReserves.toString()) / 1e9;
-      const tokenReserves = Number(tokenData.virtualTokenReserves.toString()) / 1e6;
-      const price = solReserves / tokenReserves;
+      const tokenReserves = Number(tokenData.virtualTokenReserves.toString()) / 1e6; // In millions
+      // Price per million tokens
+      const pricePerMillion = solReserves / tokenReserves;
+      // Convert to price per single token
+      const price = pricePerMillion / 1e6;
       setCurrentPrice(price);
     }
   }, [tokenData]);
@@ -95,9 +98,9 @@ export default function TradingPanel({ tokenData, onTradeComplete }: TradingPane
   // Estimate SOL for sell amount and calculate price impact
   useEffect(() => {
     if (sellAmount && tokenData) {
-      const tokensIn = parseFloat(sellAmount); // Already in millions
+      const tokensIn = parseFloat(sellAmount); // In millions
       const solReserves = Number(tokenData.virtualSolReserves.toString()) / 1e9;
-      const tokenReserves = Number(tokenData.virtualTokenReserves.toString()) / 1e6;
+      const tokenReserves = Number(tokenData.virtualTokenReserves.toString()) / 1e12; // Convert to millions (1e6 decimals * 1e6 for millions)
 
       console.log("🔢 Sell Calculation Debug:", {
         sellAmount,
@@ -385,8 +388,8 @@ export default function TradingPanel({ tokenData, onTradeComplete }: TradingPane
           {/* Price Info */}
           <div className="bg-muted/30 rounded-lg p-3 space-y-1 text-sm">
             <div className="flex justify-between">
-              <span className="text-muted-foreground">Price</span>
-              <span className="font-mono">{currentPrice.toFixed(9)} SOL</span>
+              <span className="text-muted-foreground">Price per Token</span>
+              <span className="font-mono">{currentPrice.toExponential(4)} SOL</span>
             </div>
             {buyAmount && (
               <div className="flex justify-between">
@@ -530,8 +533,8 @@ export default function TradingPanel({ tokenData, onTradeComplete }: TradingPane
           {/* Price Info */}
           <div className="bg-muted/30 rounded-lg p-3 space-y-1 text-sm">
             <div className="flex justify-between">
-              <span className="text-muted-foreground">Price</span>
-              <span className="font-mono">{currentPrice.toFixed(9)} SOL</span>
+              <span className="text-muted-foreground">Price per Token</span>
+              <span className="font-mono">{currentPrice.toExponential(4)} SOL</span>
             </div>
             {sellAmount && (
               <div className="flex justify-between">
