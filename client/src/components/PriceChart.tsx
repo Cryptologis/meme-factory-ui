@@ -40,7 +40,7 @@ export default function PriceChart({ tokenData }: PriceChartProps) {
 
       {/* Price Display */}
       <div className="bg-gradient-to-br from-green-500/10 to-blue-500/10 rounded-lg p-6 mb-6">
-        <p className="text-sm text-muted-foreground mb-2">Current Price</p>
+        <p className="text-sm text-muted-foreground mb-2">Current Price per Token</p>
         <p className="text-4xl font-bold font-mono">
           {currentPrice.toFixed(9)} <span className="text-2xl text-muted-foreground">SOL</span>
         </p>

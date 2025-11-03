@@ -95,9 +95,9 @@ export default function TradingPanel({ tokenData, onTradeComplete }: TradingPane
   // Estimate SOL for sell amount and calculate price impact
   useEffect(() => {
     if (sellAmount && tokenData) {
-      const tokensIn = parseFloat(sellAmount) * 1e6; // Convert millions to actual tokens
+      const tokensIn = parseFloat(sellAmount); // In millions
       const solReserves = Number(tokenData.virtualSolReserves.toString()) / 1e9;
-      const tokenReserves = Number(tokenData.virtualTokenReserves.toString()) / 1e6;
+      const tokenReserves = Number(tokenData.virtualTokenReserves.toString()) / 1e12; // Convert to millions (1e6 decimals * 1e6 for millions)
 
       console.log("🔢 Sell Calculation Debug:", {
         sellAmount,
@@ -385,7 +385,7 @@ export default function TradingPanel({ tokenData, onTradeComplete }: TradingPane
           {/* Price Info */}
           <div className="bg-muted/30 rounded-lg p-3 space-y-1 text-sm">
             <div className="flex justify-between">
-              <span className="text-muted-foreground">Price</span>
+              <span className="text-muted-foreground">Price per Token</span>
               <span className="font-mono">{currentPrice.toFixed(9)} SOL</span>
             </div>
             {buyAmount && (
@@ -528,7 +528,7 @@ export default function TradingPanel({ tokenData, onTradeComplete }: TradingPane
           {/* Price Info */}
           <div className="bg-muted/30 rounded-lg p-3 space-y-1 text-sm">
             <div className="flex justify-between">
-              <span className="text-muted-foreground">Price</span>
+              <span className="text-muted-foreground">Price per Token</span>
               <span className="font-mono">{currentPrice.toFixed(9)} SOL</span>
             </div>
             {sellAmount && (
