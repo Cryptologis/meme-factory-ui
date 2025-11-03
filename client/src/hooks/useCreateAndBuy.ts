@@ -6,7 +6,7 @@ import {
   getAssociatedTokenAddress,
 } from "@solana/spl-token";
 import { Program, AnchorProvider, BN } from "@coral-xyz/anchor";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import idl from "../lib/meme_chain.json";
 import { PROGRAM_ID } from "../lib/constants";
 import {
@@ -30,6 +30,7 @@ export function useCreateAndBuy() {
   const wallet = useWallet();
   const [isCreating, setIsCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const lastTxRef = useRef<string | null>(null);
 
   const createAndBuy = async (params: CreateAndBuyParams): Promise<string> => {
     if (!wallet.publicKey || !wallet.signTransaction) {
@@ -39,20 +40,22 @@ export function useCreateAndBuy() {
     setIsCreating(true);
     setError(null);
 
+    let txSignature: string | null = null;
+
     try {
       const provider = new AnchorProvider(connection, wallet as any, {
         commitment: "confirmed",
+        skipPreflight: false,
       });
 
       const program = new Program(idl as any, provider);
 
-      // Derive PDAs - FIXED to use symbol instead of memeId
+      // Derive PDAs - using symbol-based seeds to match Rust program
       const [protocolPda] = PublicKey.findProgramAddressSync(
         [Buffer.from("protocol")],
         PROGRAM_ID
       );
 
-      // ✅ FIXED: Use symbol.as_bytes() to match Rust program
       const [memePda] = PublicKey.findProgramAddressSync(
         [Buffer.from("meme"), Buffer.from(params.symbol)],
         PROGRAM_ID
@@ -75,86 +78,85 @@ export function useCreateAndBuy() {
       const initialVirtualSolReserves = new BN(VIRTUAL_SOL_RESERVES.toString());
       const initialVirtualTokenReserves = new BN(VIRTUAL_TOKEN_RESERVES.toString());
 
-      console.log("Creating token with params:", {
-        name: params.name,
-        symbol: params.symbol,
-        uri: params.uri,
-        memePda: memePda.toString(),
-        mintPda: mintPda.toString(),
-        initialVirtualSolReserves: initialVirtualSolReserves.toString(),
-        initialVirtualTokenReserves: initialVirtualTokenReserves.toString(),
-      });
+      console.log("🚀 Creating token:", params.symbol);
+      console.log("📍 Meme PDA:", memePda.toString());
+      console.log("🪙 Mint PDA:", mintPda.toString());
 
-      // Call create_meme_token
-      const tx = await program.methods
-        .createMemeToken(
-          params.name,
-          params.symbol,
-          params.uri,
-          imageHashArray,
-          initialVirtualSolReserves,
-          initialVirtualTokenReserves
-        )
-        .accounts({
-          protocol: protocolPda,
-          meme: memePda,
-          mint: mintPda,
-          creator: wallet.publicKey,
-          creatorTokenAccount: creatorTokenAccount,
-          tokenProgram: TOKEN_PROGRAM_ID,
-          associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
-          systemProgram: SystemProgram.programId,
-          rent: new PublicKey("SysvarRent111111111111111111111111111111111"),
-        })
-        .rpc({ skipPreflight: false });
+      // Call create_meme_token and capture signature immediately
+      try {
+        txSignature = await program.methods
+          .createMemeToken(
+            params.name,
+            params.symbol,
+            params.uri,
+            imageHashArray,
+            initialVirtualSolReserves,
+            initialVirtualTokenReserves
+          )
+          .accounts({
+            protocol: protocolPda,
+            meme: memePda,
+            mint: mintPda,
+            creator: wallet.publicKey,
+            creatorTokenAccount: creatorTokenAccount,
+            tokenProgram: TOKEN_PROGRAM_ID,
+            associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+            systemProgram: SystemProgram.programId,
+            rent: new PublicKey("SysvarRent111111111111111111111111111111111"),
+          })
+          .rpc({ skipPreflight: false });
 
-      console.log("✅ Token created successfully!");
-      console.log("Transaction signature:", tx);
-      console.log("🔗 View on explorer:", `https://explorer.solana.com/tx/${tx}?cluster=devnet`);
-      
-      // Always return the actual transaction signature
-      return tx;
-    } catch (err: any) {
-      console.error("Create token error:", err);
-      
-      // Try to extract transaction signature from error
-      let txSignature = null;
-      
-      // Check if error has a signature property
-      if (err.signature) {
-        txSignature = err.signature;
-      }
-      
-      // Check error message for transaction signature
-      const sigMatch = err.message?.match(/Transaction signature: ([A-Za-z0-9]{87,88})/);
-      if (sigMatch) {
-        txSignature = sigMatch[1];
-      }
-      
-      // Handle specific cooldown error
-      if (err.message && err.message.includes("LaunchCooldownActive")) {
-        const cooldownMessage = "⏱️ ANTI-BOT PROTECTION ACTIVE!\n\n" +
-          "Your token was created successfully! 🎉\n\n" +
-          "However, you must wait 60 seconds after token creation before making your first purchase. " +
-          "This cooldown prevents bot sniping and ensures fair launches.\n\n" +
-          "Please wait 60 seconds and try buying again.";
-        setError(cooldownMessage);
+        // Store the signature immediately
+        lastTxRef.current = txSignature;
+
+        console.log("✅ Token created successfully!");
+        console.log("📝 Transaction:", txSignature);
+        console.log("🔗 Explorer:", `https://explorer.solana.com/tx/${txSignature}?cluster=devnet`);
         
-        // If we have a signature, return it even with cooldown error
-        if (txSignature) {
-          console.log("Token created with cooldown. Signature:", txSignature);
-          return txSignature;
-        }
-        throw new Error(cooldownMessage);
-      }
-      
-      // If transaction was already processed but we have a signature, return it
-      if (err.message && err.message.includes("already been processed") && txSignature) {
-        console.log("Transaction already processed. Signature:", txSignature);
         return txSignature;
+
+      } catch (rpcError: any) {
+        // If we get "already processed" error, the transaction likely succeeded
+        if (rpcError.message?.includes("already been processed")) {
+          console.log("⚠️ Transaction already processed - likely succeeded");
+          
+          // Try to extract signature from error
+          const sig = rpcError.signature || lastTxRef.current;
+          
+          if (sig) {
+            console.log("✅ Using signature from error:", sig);
+            console.log("🔗 Explorer:", `https://explorer.solana.com/tx/${sig}?cluster=devnet`);
+            return sig;
+          }
+        }
+        
+        // Re-throw if we can't handle it
+        throw rpcError;
       }
       
-      setError(err.message || "Failed to create token");
+    } catch (err: any) {
+      console.error("❌ Create token error:", err);
+      
+      // If we have a signature, return it even on error
+      if (txSignature || lastTxRef.current) {
+        const sig = txSignature || lastTxRef.current;
+        console.log("⚠️ Error occurred but transaction was sent:", sig);
+        console.log("🔗 Verify on explorer:", `https://explorer.solana.com/tx/${sig}?cluster=devnet`);
+        return sig!;
+      }
+      
+      // Handle specific errors
+      if (err.message?.includes("LaunchCooldownActive")) {
+        setError("Token created but cooldown active. Wait 60 seconds before buying.");
+        throw new Error("Token created successfully! Wait 60 seconds before buying.");
+      }
+      
+      if (err.message?.includes("Simulation failed")) {
+        setError("Transaction simulation failed. Check console for details.");
+      } else {
+        setError(err.message || "Failed to create token");
+      }
+      
       throw err;
     } finally {
       setIsCreating(false);
