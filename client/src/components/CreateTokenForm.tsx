@@ -139,7 +139,19 @@ export default function CreateTokenForm({ onSuccess }: CreateTokenFormProps) {
 
       toast({
         title: "Success!",
-        description: `Token created! TX: ${txSignature.slice(0, 8)}...`,
+        description: (
+          <div className="space-y-2">
+            <p>Token created successfully!</p>
+            <a
+              href={`https://explorer.solana.com/tx/${txSignature}?cluster=devnet`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-500 hover:text-blue-600 underline block break-all"
+            >
+              View Transaction: {txSignature.slice(0, 8)}...{txSignature.slice(-8)}
+            </a>
+          </div>
+        ),
       });
 
       setFormData({ name: "", symbol: "" });
