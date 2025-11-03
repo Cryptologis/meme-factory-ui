@@ -1,6 +1,5 @@
-import { useEffect, useRef } from "react";
-import { createChart, ColorType, IChartApi, ISeriesApi } from "lightweight-charts";
 import { Card } from "@/components/ui/card";
+import { TrendingUp } from "lucide-react";
 
 interface PriceChartProps {
   tokenData: {
@@ -13,145 +12,70 @@ interface PriceChartProps {
 }
 
 export default function PriceChart({ tokenData }: PriceChartProps) {
-  const chartContainerRef = useRef<HTMLDivElement>(null);
-  const chartRef = useRef<IChartApi | null>(null);
-  const seriesRef = useRef<ISeriesApi<"Area"> | null>(null);
+  const calculatePrice = () => {
+    const solReserves = Number(tokenData.virtualSolReserves.toString()) / 1e9;
+    const tokenReserves = Number(tokenData.virtualTokenReserves.toString()) / 1e6;
+    return solReserves / tokenReserves;
+  };
 
-  useEffect(() => {
-    if (!chartContainerRef.current) return;
-
-    // Clear any existing chart
-    if (chartRef.current) {
-      chartRef.current.remove();
-    }
-
-    const chart = createChart(chartContainerRef.current, {
-      layout: {
-        background: { type: ColorType.Solid, color: 'transparent' },
-        textColor: '#9ca3af',
-      },
-      grid: {
-        vertLines: { color: 'rgba(156, 163, 175, 0.1)' },
-        horzLines: { color: 'rgba(156, 163, 175, 0.1)' },
-      },
-      width: chartContainerRef.current.clientWidth,
-      height: 500,
-      timeScale: {
-        timeVisible: true,
-        secondsVisible: false,
-      },
-      rightPriceScale: {
-        borderColor: 'rgba(156, 163, 175, 0.2)',
-      },
-      crosshair: {
-        mode: 1,
-      },
-    });
-
-    chartRef.current = chart;
-
-    // Create area series for bonding curve
-    const areaSeries = chart.addAreaSeries({
-      lineColor: '#10b981',
-      topColor: 'rgba(16, 185, 129, 0.4)',
-      bottomColor: 'rgba(16, 185, 129, 0.0)',
-      lineWidth: 2,
-    });
-
-    seriesRef.current = areaSeries;
-
-    // Generate bonding curve data
-    const currentTime = Math.floor(Date.now() / 1000);
-    const data = generateBondingCurveData(tokenData, currentTime);
-    areaSeries.setData(data);
-
-    // Fit content to chart
-    chart.timeScale().fitContent();
-
-    // Handle resize
-    const handleResize = () => {
-      if (chartContainerRef.current && chartRef.current) {
-        chartRef.current.applyOptions({
-          width: chartContainerRef.current.clientWidth,
-        });
-      }
-    };
-
-    window.addEventListener('resize', handleResize);
-
-    return () => {
-      window.removeEventListener('resize', handleResize);
-      chart.remove();
-    };
-  }, [tokenData]);
+  const currentPrice = calculatePrice();
+  const solReserves = Number(tokenData.virtualSolReserves.toString()) / 1e9;
+  const tokenReserves = Number(tokenData.virtualTokenReserves.toString()) / 1e6;
 
   return (
     <Card className="p-6">
-      <div className="mb-4">
-        <h3 className="text-lg font-bold">Bonding Curve Price</h3>
-        <p className="text-sm text-muted-foreground">
-          {tokenData.name} ({tokenData.symbol}) - Simulated Price Movement
+      <div className="mb-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-lg font-bold">Token Stats</h3>
+            <p className="text-sm text-muted-foreground">
+              {tokenData.name} ({tokenData.symbol})
+            </p>
+          </div>
+          <div className="bg-green-500/10 p-3 rounded-full">
+            <TrendingUp className="w-6 h-6 text-green-500" />
+          </div>
+        </div>
+      </div>
+
+      {/* Price Display */}
+      <div className="bg-gradient-to-br from-green-500/10 to-blue-500/10 rounded-lg p-6 mb-6">
+        <p className="text-sm text-muted-foreground mb-2">Current Price</p>
+        <p className="text-4xl font-bold font-mono">
+          {currentPrice.toFixed(9)} <span className="text-2xl text-muted-foreground">SOL</span>
         </p>
       </div>
-      <div ref={chartContainerRef} className="w-full" />
-      <div className="mt-4 grid grid-cols-3 gap-4 text-sm">
-        <div>
-          <p className="text-muted-foreground">Current Price</p>
-          <p className="font-mono font-semibold">
-            {calculatePrice(tokenData).toFixed(9)} SOL
+
+      {/* Stats Grid */}
+      <div className="grid grid-cols-2 gap-4">
+        <div className="bg-muted/30 rounded-lg p-4">
+          <p className="text-sm text-muted-foreground mb-2">SOL Reserves</p>
+          <p className="text-xl font-bold font-mono">
+            {solReserves.toFixed(2)}
           </p>
+          <p className="text-xs text-muted-foreground mt-1">SOL</p>
         </div>
-        <div>
-          <p className="text-muted-foreground">SOL Reserves</p>
-          <p className="font-mono font-semibold">
-            {(Number(tokenData.virtualSolReserves.toString()) / 1e9).toFixed(2)} SOL
+        <div className="bg-muted/30 rounded-lg p-4">
+          <p className="text-sm text-muted-foreground mb-2">Token Reserves</p>
+          <p className="text-xl font-bold font-mono">
+            {tokenReserves.toFixed(2)}
           </p>
+          <p className="text-xs text-muted-foreground mt-1">Million</p>
         </div>
-        <div>
-          <p className="text-muted-foreground">Token Reserves</p>
-          <p className="font-mono font-semibold">
-            {(Number(tokenData.virtualTokenReserves.toString()) / 1e6).toFixed(2)}M
-          </p>
+      </div>
+
+      {/* Bonding Curve Info */}
+      <div className="mt-6 bg-blue-500/5 border border-blue-500/20 rounded-lg p-4">
+        <div className="flex items-start gap-3">
+          <div className="text-2xl">📊</div>
+          <div className="flex-1">
+            <h4 className="font-semibold mb-1">Bonding Curve Active</h4>
+            <p className="text-sm text-muted-foreground">
+              This token uses a constant product bonding curve (x × y = k) for automated market making.
+            </p>
+          </div>
         </div>
       </div>
     </Card>
   );
-}
-
-// Helper function to calculate current price
-function calculatePrice(tokenData: any): number {
-  const solReserves = Number(tokenData.virtualSolReserves.toString()) / 1e9;
-  const tokenReserves = Number(tokenData.virtualTokenReserves.toString()) / 1e6;
-  return solReserves / tokenReserves;
-}
-
-// Generate simulated bonding curve data
-function generateBondingCurveData(tokenData: any, currentTime: number) {
-  const currentPrice = calculatePrice(tokenData);
-  const solReserves = Number(tokenData.virtualSolReserves.toString()) / 1e9;
-  const tokenReserves = Number(tokenData.virtualTokenReserves.toString()) / 1e6;
-  const k = solReserves * tokenReserves; // Constant product
-
-  // Generate 100 data points showing the bonding curve progression
-  const numPoints = 100;
-  const data = [];
-
-  // Calculate price at different points of token supply depletion
-  for (let i = 0; i < numPoints; i++) {
-    // Simulate selling tokens back into the pool (going back in time)
-    const progress = i / numPoints;
-    const simulatedTokenReserves = tokenReserves + (tokenReserves * progress * 2);
-    const simulatedSolReserves = k / simulatedTokenReserves;
-    const price = simulatedSolReserves / simulatedTokenReserves;
-
-    // Create timestamps going backwards from current time
-    const timestamp = currentTime - (numPoints - i) * 3600; // 1 hour intervals
-
-    data.push({
-      time: timestamp,
-      value: price,
-    });
-  }
-
-  return data;
 }
