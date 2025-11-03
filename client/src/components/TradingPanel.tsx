@@ -172,7 +172,11 @@ export default function TradingPanel({ tokenData, onTradeComplete }: TradingPane
 
       setBuyAmount("");
       // Refetch token balance after successful purchase
-      setTimeout(() => refetchBalance(), 2000);
+      console.log("🔄 Refetching balance after buy...");
+      setTimeout(() => {
+        refetchBalance();
+        console.log("✅ Balance refetch triggered");
+      }, 3000); // Increased to 3 seconds for network confirmation
       if (onTradeComplete) onTradeComplete(signature);
     } catch (error: any) {
       toast({
@@ -263,7 +267,11 @@ export default function TradingPanel({ tokenData, onTradeComplete }: TradingPane
 
       setSellAmount("");
       // Refetch token balance after successful sale
-      setTimeout(() => refetchBalance(), 2000);
+      console.log("🔄 Refetching balance after sell...");
+      setTimeout(() => {
+        refetchBalance();
+        console.log("✅ Balance refetch triggered");
+      }, 3000); // Increased to 3 seconds for network confirmation
       if (onTradeComplete) onTradeComplete(signature);
     } catch (error: any) {
       toast({
