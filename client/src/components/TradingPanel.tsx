@@ -188,7 +188,7 @@ export default function TradingPanel({ tokenData, onTradeComplete }: TradingPane
     }
   };
 
-  const quickAmounts = [0.1, 0.5, 1.0, 5.0];
+  const quickAmounts = [0.1, 0.5, 1.0];
 
   return (
     <Card className="p-6">
@@ -229,7 +229,7 @@ export default function TradingPanel({ tokenData, onTradeComplete }: TradingPane
             
             {/* Quick Amount Buttons */}
             <div>
-              <p className="text-xs text-muted-foreground mb-2">Quick amounts:</p>
+              <p className="text-xs text-muted-foreground mb-2">Quick amounts or enter custom:</p>
               <div className="flex gap-2">
                 {quickAmounts.map((amount) => (
                   <Button
@@ -315,21 +315,49 @@ export default function TradingPanel({ tokenData, onTradeComplete }: TradingPane
               </div>
             </div>
             
-            {/* Quick Amount Buttons */}
+            {/* Sell Percentage Buttons */}
             <div>
-              <p className="text-xs text-muted-foreground mb-2">Quick amounts (millions):</p>
-              <div className="flex gap-2">
-                {[1, 5, 10, 25].map((amount) => (
-                  <Button
-                    key={amount}
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setSellAmount((amount * 1_000_000).toString())}
-                    className="flex-1 h-8"
-                  >
-                    {amount}M
-                  </Button>
-                ))}
+              <p className="text-xs text-muted-foreground mb-2">Sell percentage or enter custom:</p>
+              <div className="grid grid-cols-3 gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    toast({
+                      title: "Coming Soon",
+                      description: "Percentage-based selling will be added soon",
+                    });
+                  }}
+                  className="h-8"
+                >
+                  25%
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    toast({
+                      title: "Coming Soon",
+                      description: "Percentage-based selling will be added soon",
+                    });
+                  }}
+                  className="h-8"
+                >
+                  50%
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    toast({
+                      title: "Coming Soon",
+                      description: "Percentage-based selling will be added soon",
+                    });
+                  }}
+                  className="h-8"
+                >
+                  75%
+                </Button>
               </div>
             </div>
           </div>
