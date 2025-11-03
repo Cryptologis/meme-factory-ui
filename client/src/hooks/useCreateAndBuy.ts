@@ -1,20 +1,25 @@
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { PublicKey, SystemProgram } from "@solana/web3.js";
-import { Program, AnchorProvider, BN } from "@coral-xyz/anchor";
 import {
   TOKEN_PROGRAM_ID,
   ASSOCIATED_TOKEN_PROGRAM_ID,
   getAssociatedTokenAddress,
 } from "@solana/spl-token";
-import { useState, useRef } from "react";
-import idl from "@/lib/meme_chain.json";
-import { PROGRAM_ID, VIRTUAL_SOL_RESERVES, VIRTUAL_TOKEN_RESERVES, TOKEN_MULTIPLIER } from "@/lib/constants";
+import { Program, AnchorProvider, BN } from "@coral-xyz/anchor";
+import { useState } from "react";
+import idl from "../lib/meme_chain.json";
+import { PROGRAM_ID } from "../lib/constants";
+import {
+  VIRTUAL_SOL_RESERVES,
+  VIRTUAL_TOKEN_RESERVES,
+} from "../lib/constants";
 
-export interface CreateTokenParams {
+export interface CreateAndBuyParams {
   name: string;
   symbol: string;
   uri: string;
   imageHash: number[];
+  buyAmount: number;
 }
 
 export function useCreateAndBuy() {
@@ -22,43 +27,31 @@ export function useCreateAndBuy() {
   const wallet = useWallet();
   const [isCreating, setIsCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const isProcessingRef = useRef(false); // Prevent double submissions
 
-  const createAndBuy = async (params: CreateTokenParams, buyAmountSol: number) => {
+  const createAndBuy = async (params: CreateAndBuyParams) => {
     if (!wallet.publicKey || !wallet.signTransaction) {
       throw new Error("Wallet not connected");
     }
 
-    // Prevent double submissions
-    if (isProcessingRef.current) {
-      console.log("Transaction already in progress, ignoring duplicate call");
-      return;
-    }
-
-    isProcessingRef.current = true;
     setIsCreating(true);
     setError(null);
 
     try {
       const provider = new AnchorProvider(connection, wallet as any, {
         commitment: "confirmed",
-        preflightCommitment: "confirmed",
       });
 
       const program = new Program(idl as any, provider);
 
-      // Derive PDAs
+      // Derive PDAs - FIXED to use symbol instead of memeId
       const [protocolPda] = PublicKey.findProgramAddressSync(
         [Buffer.from("protocol")],
         PROGRAM_ID
       );
 
-      // Generate unique meme PDA using protocol's counter
-      const protocolAccount = await program.account.protocol.fetch(protocolPda);
-      const memeId = new BN(protocolAccount.totalMemesCreated);
-
+      // ✅ FIXED: Use symbol.as_bytes() to match Rust program
       const [memePda] = PublicKey.findProgramAddressSync(
-        [Buffer.from("meme"), memeId.toArrayLike(Buffer, "le", 8)],
+        [Buffer.from("meme"), Buffer.from(params.symbol)],
         PROGRAM_ID
       );
 
@@ -83,6 +76,8 @@ export function useCreateAndBuy() {
         name: params.name,
         symbol: params.symbol,
         uri: params.uri,
+        memePda: memePda.toString(),
+        mintPda: mintPda.toString(),
         initialVirtualSolReserves: initialVirtualSolReserves.toString(),
         initialVirtualTokenReserves: initialVirtualTokenReserves.toString(),
       });
@@ -146,7 +141,6 @@ export function useCreateAndBuy() {
       throw err;
     } finally {
       setIsCreating(false);
-      isProcessingRef.current = false;
     }
   };
 
