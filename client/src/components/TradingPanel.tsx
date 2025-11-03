@@ -45,10 +45,8 @@ export default function TradingPanel({ tokenData, onTradeComplete }: TradingPane
   const [slippageTolerance, setSlippageTolerance] = useState<number>(1.0); // Default 1%
   const [priorityFee, setPriorityFee] = useState<number>(0);
 
-  // Convert raw token balance to actual tokens (divide by 1e6 for 6 decimals)
-  // Then convert to millions for display
-  const balanceInTokens = tokenBalance / 1e6; // Actual token amount
-  const balanceInMillions = balanceInTokens / 1e6; // For millions display
+  // Convert raw token balance to millions (divide by 1e12 total: 1e6 decimals + 1e6 for millions)
+  const balanceInMillions = tokenBalance / 1e12;
 
   // Calculate current price from bonding curve
   useEffect(() => {
@@ -91,7 +89,7 @@ export default function TradingPanel({ tokenData, onTradeComplete }: TradingPane
   // Estimate SOL for sell amount and calculate price impact
   useEffect(() => {
     if (sellAmount && tokenData) {
-      const tokensIn = parseFloat(sellAmount) / 1e6; // Convert from tokens to millions
+      const tokensIn = parseFloat(sellAmount); // Already in millions
       const solReserves = Number(tokenData.virtualSolReserves.toString()) / 1e9;
       const tokenReserves = Number(tokenData.virtualTokenReserves.toString()) / 1e6;
 
@@ -210,9 +208,9 @@ export default function TradingPanel({ tokenData, onTradeComplete }: TradingPane
       return;
     }
 
-    // Calculate percentage of balance (in tokens, not millions)
-    const amountToSell = balanceInTokens * (percentage / 100);
-    console.log("✅ Setting sell amount:", amountToSell);
+    // Calculate percentage of balance (in millions)
+    const amountToSell = balanceInMillions * (percentage / 100);
+    console.log("✅ Setting sell amount:", amountToSell, "millions");
     setSellAmount(amountToSell.toString());
   };
 
@@ -236,9 +234,13 @@ export default function TradingPanel({ tokenData, onTradeComplete }: TradingPane
     }
 
     try {
+      // sellAmount is in millions, convert to actual tokens for the hook
+      const tokenAmountInTokens = parseFloat(sellAmount) * 1e6;
+      console.log("💸 Selling:", parseFloat(sellAmount), "M tokens =", tokenAmountInTokens, "tokens");
+
       const signature = await sellTokens({
         memePda: tokenData.pda,
-        tokenAmount: parseFloat(sellAmount),
+        tokenAmount: tokenAmountInTokens,
       });
 
       toast({
@@ -416,7 +418,7 @@ export default function TradingPanel({ tokenData, onTradeComplete }: TradingPane
               <div className="flex items-center gap-2">
                 {publicKey && (
                   <span className="text-xs text-muted-foreground">
-                    Balance: {balanceInTokens.toLocaleString()} {tokenData.symbol}
+                    Balance: {balanceInMillions.toFixed(4)}M {tokenData.symbol}
                   </span>
                 )}
                 <TradingSettings
@@ -437,8 +439,9 @@ export default function TradingPanel({ tokenData, onTradeComplete }: TradingPane
                 step="0.1"
                 min="0"
               />
-              <div className="absolute right-4 top-1/2 -translate-y-1/2 font-semibold text-muted-foreground">
-                {tokenData.symbol}
+              <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-baseline gap-1">
+                <span className="font-semibold text-muted-foreground">{tokenData.symbol}</span>
+                <span className="text-xs text-muted-foreground">(Millions)</span>
               </div>
             </div>
             
