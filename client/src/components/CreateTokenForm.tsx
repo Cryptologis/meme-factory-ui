@@ -83,14 +83,15 @@ export default function CreateTokenForm({ onSuccess }: CreateTokenFormProps) {
       return;
     }
 
+    // Normalize to UPPERCASE (required by program's anti-PVP protection)
+    const normalizedName = formData.name.trim().toUpperCase();
+    const normalizedSymbol = formData.symbol.trim().toUpperCase();
+
     // Check for duplicate tokens (case-insensitive)
     if (program) {
       try {
         console.log("🔍 Checking for duplicate tokens...");
         const allTokens = await program.account.memeToken.all();
-
-        const normalizedName = formData.name.trim().toUpperCase();
-        const normalizedSymbol = formData.symbol.trim().toUpperCase();
 
         const duplicate = allTokens.find((token: any) => {
           const existingName = token.account.name.trim().toUpperCase();
@@ -187,8 +188,8 @@ export default function CreateTokenForm({ onSuccess }: CreateTokenFormProps) {
       console.log('Percentage of virtual supply:', ((finalBuyAmount / virtualTokens) * 100).toFixed(4) + '%');
 
       const txSignature = await createAndBuy({
-        name: formData.name,
-        symbol: formData.symbol,
+        name: normalizedName,
+        symbol: normalizedSymbol,
         uri,
         imageHash,
         buyAmount: finalBuyAmount,
