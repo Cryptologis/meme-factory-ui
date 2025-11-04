@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { useToast } from "@/hooks/use-toast";
 import { useCreateAndBuy } from "@/hooks/useCreateAndBuy";
+import { useProgram } from "@/hooks/useProgram";
 import { VIRTUAL_SOL_RESERVES, VIRTUAL_TOKEN_RESERVES, TOKEN_MULTIPLIER } from "@/lib/constants";
 import { Loader2, Upload, X } from "lucide-react";
 
@@ -15,6 +16,7 @@ interface CreateTokenFormProps {
 export default function CreateTokenForm({ onSuccess }: CreateTokenFormProps) {
   const { toast } = useToast();
   const { createAndBuy, loading } = useCreateAndBuy();
+  const program = useProgram();
 
   const [formData, setFormData] = useState({
     name: "",
@@ -71,7 +73,7 @@ export default function CreateTokenForm({ onSuccess }: CreateTokenFormProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.name || !formData.symbol || !imageFile) {
       toast({
         title: "Error",
@@ -79,6 +81,69 @@ export default function CreateTokenForm({ onSuccess }: CreateTokenFormProps) {
         variant: "destructive",
       });
       return;
+    }
+
+    // Normalize to UPPERCASE (required by program's anti-PVP protection)
+    const normalizedName = formData.name.trim().toUpperCase();
+    const normalizedSymbol = formData.symbol.trim().toUpperCase();
+
+    // Check for duplicate tokens (case-insensitive)
+    if (program) {
+      try {
+        console.log("🔍 Checking for duplicate tokens...");
+        const allTokens = await program.account.memeToken.all();
+
+        const duplicate = allTokens.find((token: any) => {
+          const existingName = token.account.name.trim().toUpperCase();
+          const existingSymbol = token.account.symbol.trim().toUpperCase();
+
+          return existingName === normalizedName || existingSymbol === normalizedSymbol;
+        });
+
+        if (duplicate) {
+          const duplicateAccount = duplicate.account;
+          const matchType = duplicateAccount.name.trim().toUpperCase() === normalizedName ? "name" : "symbol";
+          const matchValue = matchType === "name" ? duplicateAccount.name : duplicateAccount.symbol;
+
+          toast({
+            title: "❌ Token Already Exists",
+            description: (
+              <div className="space-y-2">
+                <p>A token with this {matchType} already exists:</p>
+                <p className="font-mono text-sm">
+                  {duplicateAccount.name} ({duplicateAccount.symbol})
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Token CA: {duplicateAccount.mint.toString().slice(0, 8)}...
+                </p>
+                <p className="text-xs mt-2">
+                  💡 This is an anti-PVP platform - each name and symbol must be unique!
+                </p>
+              </div>
+            ),
+            variant: "destructive",
+            duration: 8000,
+          });
+
+          console.log("❌ Duplicate found:", {
+            matchType,
+            matchValue,
+            existing: duplicateAccount,
+          });
+
+          return;
+        }
+
+        console.log("✅ No duplicates found. Proceeding with creation...");
+      } catch (error) {
+        console.error("Error checking for duplicates:", error);
+        toast({
+          title: "Warning",
+          description: "Could not verify token uniqueness. Please try again.",
+          variant: "destructive",
+        });
+        return;
+      }
     }
 
     // HARD CAP at 2.4% to stay under 2.5% limit
@@ -123,8 +188,8 @@ export default function CreateTokenForm({ onSuccess }: CreateTokenFormProps) {
       console.log('Percentage of virtual supply:', ((finalBuyAmount / virtualTokens) * 100).toFixed(4) + '%');
 
       const txSignature = await createAndBuy({
-        name: formData.name,
-        symbol: formData.symbol,
+        name: normalizedName,
+        symbol: normalizedSymbol,
         uri,
         imageHash,
         buyAmount: finalBuyAmount,
