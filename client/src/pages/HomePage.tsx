@@ -21,7 +21,8 @@ import {
   Percent,
   Sparkles,
   Info,
-  ExternalLink
+  ExternalLink,
+  Twitter
 } from "lucide-react";
 
 export default function HomePage() {
@@ -543,6 +544,49 @@ export default function HomePage() {
             >
               Explore Tokens
             </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* Footer */}
+      <div className="bg-background border-t">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          {/* Legal Disclaimer */}
+          <Card className="p-6 mb-6 bg-muted/30">
+            <h3 className="text-lg font-bold mb-3">⚠️ Legal Disclaimer</h3>
+            <div className="text-sm text-muted-foreground space-y-2">
+              <p>
+                <strong>No Financial Advice:</strong> The information provided on this platform is for educational and informational purposes only. It does not constitute financial, investment, or legal advice.
+              </p>
+              <p>
+                <strong>No Expectation of Gains:</strong> Participation in this platform does not guarantee any financial returns or profits. All cryptocurrency investments carry significant risk, including the potential loss of principal.
+              </p>
+              <p>
+                <strong>Use at Your Own Risk:</strong> This platform is currently in beta testing on Solana Devnet. Users acknowledge that they use this platform at their own risk. The platform has not been audited and may contain bugs or vulnerabilities.
+              </p>
+              <p>
+                <strong>Educational Purposes:</strong> This platform is designed for educational purposes to demonstrate decentralized token launch mechanisms. It is not intended for mainnet use without proper security audits and testing.
+              </p>
+              <p>
+                <strong>No Guarantees:</strong> We make no guarantees about the availability, functionality, or security of this platform. Users should conduct their own research before participating.
+              </p>
+            </div>
+          </Card>
+
+          {/* Social & Copyright */}
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+            <div className="text-sm text-muted-foreground">
+              © 2025 Meme-Factory. All Rights Reserved.
+            </div>
+            <a
+              href="https://x.com/memefactor79760"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 text-sm font-medium hover:text-primary transition-colors"
+            >
+              <Twitter className="w-4 h-4" />
+              Follow us on X
+            </a>
           </div>
         </div>
       </div>
