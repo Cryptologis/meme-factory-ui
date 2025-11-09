@@ -18,14 +18,14 @@ export default function RoadmapPage() {
         </div>
 
         {/* Phase 1 - Core Features */}
-        <Card className="p-6 mb-6 border-green-500/50 bg-green-500/5">
+        <Card className="p-6 mb-6 border-blue-500/50 bg-blue-500/5">
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 rounded-full bg-green-500 flex items-center justify-center">
-              <CheckCircle2 className="w-6 h-6 text-white" />
+            <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center">
+              <Sparkles className="w-6 h-6 text-white" />
             </div>
             <div>
               <h2 className="text-2xl font-bold">Phase 1 - Core Features</h2>
-              <Badge className="bg-green-500 text-white hover:bg-green-500">Completed</Badge>
+              <Badge className="bg-blue-500 text-white hover:bg-blue-500">In Progress</Badge>
             </div>
           </div>
           <ul className="space-y-3 ml-13">
@@ -38,7 +38,7 @@ export default function RoadmapPage() {
               <span>Buy/Sell functionality</span>
             </li>
             <li className="flex items-start gap-2">
-              <CheckCircle2 className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
+              <Circle className="w-5 h-5 text-muted-foreground mt-0.5 flex-shrink-0" />
               <span>Portfolio tracking</span>
             </li>
             <li className="flex items-start gap-2">
@@ -46,21 +46,21 @@ export default function RoadmapPage() {
               <span>Anti-PVP & anti-bundling</span>
             </li>
             <li className="flex items-start gap-2">
-              <CheckCircle2 className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
+              <Circle className="w-5 h-5 text-muted-foreground mt-0.5 flex-shrink-0" />
               <span>Reddit API integration</span>
             </li>
           </ul>
         </Card>
 
         {/* Phase 2 - Enhanced Features */}
-        <Card className="p-6 mb-6 border-blue-500/50 bg-blue-500/5">
+        <Card className="p-6 mb-6">
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-full bg-purple-500 flex items-center justify-center">
               <Sparkles className="w-6 h-6 text-white" />
             </div>
             <div>
               <h2 className="text-2xl font-bold">Phase 2 - Enhanced Features</h2>
-              <Badge className="bg-blue-500 text-white hover:bg-blue-500">In Progress</Badge>
+              <Badge variant="outline">Planned</Badge>
             </div>
           </div>
           <ul className="space-y-3 ml-13">
