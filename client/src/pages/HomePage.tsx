@@ -8,7 +8,6 @@ import WalletConnectionModal from "@/components/WalletConnectionModal";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { useRecentTokens } from "@/hooks/useRecentTokens";
 import { toast } from "@/hooks/use-toast";
 import {
   Shield,
@@ -31,7 +30,6 @@ import {
 export default function HomePage() {
   const [, setLocation] = useLocation();
   const [walletModalOpen, setWalletModalOpen] = useState(false);
-  const { tokens: recentTokens, loading: tokensLoading } = useRecentTokens(3);
 
   const copyContractAddress = () => {
     const ca = "79YUNgrEiZzNCp4kEPbtp611EAN9gskLtWyekEcqpump";
@@ -96,6 +94,33 @@ export default function HomePage() {
       comments: 567,
       trend_score: 98,
       url: "https://reddit.com/r/wallstreetbets",
+    },
+  ];
+
+  const mockTokens = [
+    {
+      symbol: "DOGE",
+      name: "Doge Coin",
+      price: 0.000123,
+      change24h: 15.42,
+      liquidity: 125000,
+      marketCap: 580000,
+    },
+    {
+      symbol: "PEPE",
+      name: "Pepe Token",
+      price: 0.000089,
+      change24h: -8.23,
+      liquidity: 98000,
+      marketCap: 420000,
+    },
+    {
+      symbol: "MOON",
+      name: "Moon Rocket",
+      price: 0.000456,
+      change24h: 42.15,
+      liquidity: 210000,
+      marketCap: 890000,
     },
   ];
 
@@ -505,54 +530,11 @@ export default function HomePage() {
           </Button>
         </div>
 
-        {tokensLoading ? (
-          <div className="text-center py-12">
-            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-            <p className="text-muted-foreground mt-4">Loading recent launches...</p>
-          </div>
-        ) : recentTokens.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {recentTokens.map((token) => {
-              // Calculate price from bonding curve: price = SOL reserves / token reserves
-              const solReserves = token.virtualSolReserves.toNumber() / 1e9; // Convert lamports to SOL
-              const tokenReserves = token.virtualTokenReserves.toNumber() / 1e9; // Assuming 9 decimals
-              const price = tokenReserves > 0 ? solReserves / tokenReserves : 0;
-
-              // Market cap = total supply * price
-              const totalSupply = token.totalSupply.toNumber() / 1e9;
-              const marketCap = totalSupply * price;
-
-              return (
-                <div
-                  key={token.mint}
-                  onClick={() => setLocation(`/trade?token=${token.pda}`)}
-                  className="cursor-pointer"
-                >
-                  <TokenCard
-                    symbol={token.symbol}
-                    name={token.name}
-                    price={price}
-                    change24h={0} // We don't track 24h changes yet
-                    liquidity={solReserves}
-                    marketCap={marketCap}
-                  />
-                </div>
-              );
-            })}
-          </div>
-        ) : (
-          <div className="text-center py-12">
-            <Coins className="w-16 h-16 mx-auto mb-4 text-muted-foreground opacity-50" />
-            <h3 className="text-lg font-semibold mb-2">No Tokens Yet</h3>
-            <p className="text-muted-foreground mb-6">
-              Be the first to launch a token on the platform!
-            </p>
-            <Button onClick={() => setLocation('/create')}>
-              <Sparkles className="w-4 h-4 mr-2" />
-              Create First Token
-            </Button>
-          </div>
-        )}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {mockTokens.map((token) => (
+            <TokenCard key={token.symbol} {...token} />
+          ))}
+        </div>
       </div>
 
       {/* Final CTA Section */}
