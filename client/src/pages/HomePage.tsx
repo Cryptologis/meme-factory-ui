@@ -9,6 +9,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useRecentTokens } from "@/hooks/useRecentTokens";
+import { toast } from "@/hooks/use-toast";
 import {
   Shield,
   TrendingUp,
@@ -23,13 +24,23 @@ import {
   Sparkles,
   Info,
   ExternalLink,
-  Twitter
+  Twitter,
+  Copy
 } from "lucide-react";
 
 export default function HomePage() {
   const [, setLocation] = useLocation();
   const [walletModalOpen, setWalletModalOpen] = useState(false);
   const { tokens: recentTokens, loading: tokensLoading } = useRecentTokens(3);
+
+  const copyContractAddress = () => {
+    const ca = "79YUNgrEiZzNCp4kEPbtp611EAN9gskLtWyekEcqpump";
+    navigator.clipboard.writeText(ca);
+    toast({
+      title: "Copied!",
+      description: "Contract address copied to clipboard",
+    });
+  };
 
   const mockMemes = [
     {
@@ -475,6 +486,15 @@ export default function HomePage() {
         <div className="flex items-center justify-between mb-8">
           <div>
             <h2 className="text-3xl font-bold">Recent Launches</h2>
+            <div
+              onClick={copyContractAddress}
+              className="mt-2 mb-1 flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity w-fit"
+            >
+              <span className="text-white font-mono text-sm bg-gradient-to-r from-primary to-chart-2 px-3 py-1.5 rounded-md">
+                CA: 79YUNgrEiZzNCp4kEPbtp611EAN9gskLtWyekEcqpump
+              </span>
+              <Copy className="w-4 h-4 text-muted-foreground hover:text-foreground transition-colors" />
+            </div>
             <p className="text-muted-foreground mt-1">
               Fair-launched tokens with creator rewards & anti-PVP protection
             </p>
