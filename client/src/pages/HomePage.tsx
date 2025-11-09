@@ -8,18 +8,20 @@ import WalletConnectionModal from "@/components/WalletConnectionModal";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { 
-  Shield, 
-  TrendingUp, 
-  Coins, 
-  Zap, 
-  Users, 
+import {
+  Shield,
+  TrendingUp,
+  Coins,
+  Zap,
+  Users,
   Lock,
   CheckCircle2,
   ArrowRight,
   Clock,
   Percent,
-  Sparkles
+  Sparkles,
+  Info,
+  ExternalLink
 } from "lucide-react";
 
 export default function HomePage() {
@@ -112,6 +114,96 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen">
+      {/* Devnet Notice Banner */}
+      <div className="bg-gradient-to-r from-blue-600 via-blue-500 to-blue-600 border-b-4 border-blue-700">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <Card className="bg-blue-50 border-blue-200 shadow-lg">
+            <div className="p-6">
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
+                  <Info className="w-6 h-6 text-blue-600" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-xl font-bold text-blue-900 mb-3 flex items-center gap-2">
+                    <Badge className="bg-blue-600 text-white hover:bg-blue-600">
+                      Devnet
+                    </Badge>
+                    Protocol Currently Live on Solana Devnet
+                  </h3>
+                  <p className="text-blue-800 mb-4">
+                    We're currently running on Solana's Devnet for testing. Follow these steps to get started:
+                  </p>
+
+                  <div className="space-y-3">
+                    <div className="flex items-start gap-3">
+                      <div className="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center flex-shrink-0 text-sm font-bold mt-0.5">
+                        1
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-blue-900 mb-1">Connect to Devnet</h4>
+                        <p className="text-sm text-blue-700">
+                          Open your Solana wallet (Phantom, Solflare, etc.) and switch to the <strong>Devnet</strong> network in your wallet settings.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-start gap-3">
+                      <div className="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center flex-shrink-0 text-sm font-bold mt-0.5">
+                        2
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-blue-900 mb-1">Get Devnet SOL (Free)</h4>
+                        <p className="text-sm text-blue-700 mb-2">
+                          Request free test SOL from the Solana faucet to start trading. You'll need some SOL to create tokens and make trades.
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          <Button
+                            size="sm"
+                            onClick={() => window.open('https://faucet.solana.com', '_blank')}
+                            className="bg-blue-600 hover:bg-blue-700 text-white gap-2"
+                          >
+                            <ExternalLink className="w-4 h-4" />
+                            Solana Faucet
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => window.open('https://solfaucet.com', '_blank')}
+                            className="border-blue-600 text-blue-700 hover:bg-blue-50 gap-2"
+                          >
+                            <ExternalLink className="w-4 h-4" />
+                            Alternative Faucet
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-start gap-3">
+                      <div className="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center flex-shrink-0 text-sm font-bold mt-0.5">
+                        3
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-blue-900 mb-1">Start Creating & Trading</h4>
+                        <p className="text-sm text-blue-700">
+                          Once you have Devnet SOL, you can create tokens, trade, and test all features risk-free!
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 pt-4 border-t border-blue-200">
+                    <p className="text-xs text-blue-600 flex items-center gap-1">
+                      <Info className="w-3 h-3" />
+                      <span>Devnet tokens have no real value. This is a test environment for development purposes.</span>
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </Card>
+        </div>
+      </div>
+
       <HeroSection
         onConnectWallet={() => setWalletModalOpen(true)}
         onCreateToken={() => setLocation('/create')}
