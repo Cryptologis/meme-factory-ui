@@ -10,6 +10,7 @@ import WalletConnectionModal from "@/components/WalletConnectionModal";
 import HomePage from "@/pages/HomePage";
 import CreateTokenPage from "@/pages/CreateTokenPage";
 import TradePage from "@/pages/TradePage";
+import RoadmapPage from "@/pages/RoadmapPage";
 import TokenDetailPage from "@/pages/TokenDetailPage";
 import NotFound from "@/pages/not-found";
 import { useWallet } from "@/hooks/useWallet";
@@ -21,6 +22,7 @@ function Router() {
       <Route path="/" component={HomePage} />
       <Route path="/create" component={CreateTokenPage} />
       <Route path="/trade" component={TradePage} />
+      <Route path="/roadmap" component={RoadmapPage} />
       <Route path="/token/:mintAddress" component={TokenDetailPage} />
       <Route component={NotFound} />
     </Switch>
@@ -66,6 +68,9 @@ function AppContent() {
               </a>
               <a href="/trade" className={`text-sm font-medium transition-colors hover:text-primary ${location === "/trade" ? "text-foreground" : "text-muted-foreground"}`}>
                 Trade
+              </a>
+              <a href="/roadmap" className={`text-sm font-medium transition-colors hover:text-primary ${location === "/roadmap" ? "text-foreground" : "text-muted-foreground"}`}>
+                🗺️ Roadmap
               </a>
             </nav>
           </div>
